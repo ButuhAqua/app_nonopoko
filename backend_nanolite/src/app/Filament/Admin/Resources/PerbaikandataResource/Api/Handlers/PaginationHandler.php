@@ -20,15 +20,17 @@ class PaginationHandler extends Handlers {
      */
     public function handler()
     {
-        $query = static::getEloquentQuery();
+        $query = static::getEloquentQuery()
+            ->with(['department:id,name','employee:id,name',
+                    'customer:id,name','customerCategory:id,name']);
 
-        $query = QueryBuilder::for($query)
-        ->allowedFields($this->getAllowedFields() ?? [])
-        ->allowedSorts($this->getAllowedSorts() ?? [])
-        ->allowedFilters($this->getAllowedFilters() ?? [])
-        ->allowedIncludes($this->getAllowedIncludes() ?? [])
-        ->paginate(request()->query('per_page'))
-        ->appends(request()->query());
+        $query = \Spatie\QueryBuilder\QueryBuilder::for($query)
+            ->allowedFields($this->getAllowedFields() ?? [])
+            ->allowedSorts($this->getAllowedSorts() ?? [])
+            ->allowedFilters($this->getAllowedFilters() ?? [])
+            ->allowedIncludes($this->getAllowedIncludes() ?? [])
+            ->paginate(request()->query('per_page'))
+            ->appends(request()->query());
 
         return PerbaikandataTransformer::collection($query);
     }

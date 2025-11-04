@@ -22,7 +22,7 @@ class CreatePerbaikandataRequest extends FormRequest
     public function rules(): array
     {
         return [
-			'company_id' => 'required',
+            'company_id' => ['nullable', 'integer'],
 			'department_id' => 'required',
 			'employee_id' => 'required',
 			'customer_categories_id' => 'required',
@@ -30,8 +30,9 @@ class CreatePerbaikandataRequest extends FormRequest
 			'pilihan_data' => 'required',
 			'data_baru' => 'required|string',
 			'address' => 'required',
-			'image' => 'required',
-			'status_pengajuan' => 'required'
+			'images' => ['nullable','array'],
+            'images.*' => ['file','image','max:5120'], // 5MB
+			'status_pengajuan' => ['nullable', 'string'],
 		];
     }
 }
