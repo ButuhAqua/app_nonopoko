@@ -166,41 +166,39 @@ class BulbScreen extends StatelessWidget {
           ),
         );
 
-    // ====== Tabel varian (10 kolom, sesuai data yang kamu kirim) ======
+    // ====== Tabel varian (tanpa kolom Harga) ======
     Widget specTable() {
-      // Kolom: Watt | Lumen | Tinggi | Diameter | Harga | Warna | Ket | Warna | Ket | Isi/Dus
+      // Kolom: Watt | Lumen | Tinggi | Diameter | Warna | Ket | Warna | Ket | Isi/Dus
       const rows = [
-        ['5 Watt',  '600 lm',  '105 mm',  '55 mm',   'Rp 23.900', '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan', '100'],
-        ['7 Watt',  '840 lm',  '115 mm',  '60 mm',   'Rp 30.900', '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan', '100'],
-        ['9 Watt',  '1080 lm', '115 mm',  '60 mm',   'Rp 35.900', '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan', '100'],
-        ['12 Watt', '1440 lm', '125.5 mm','65 mm',   'Rp 42.900', '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan', '100'],
-        ['15 Watt', '1800 lm', '137.5 mm','69.8 mm', 'Rp 50.900', '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan', '100'],
+        ['5 Watt',  '600 lm',  '105 mm',  '55 mm',   '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan', '100'],
+        ['7 Watt',  '840 lm',  '115 mm',  '60 mm',   '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan', '100'],
+        ['9 Watt',  '1080 lm', '115 mm',  '60 mm',   '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan', '100'],
+        ['12 Watt', '1440 lm', '125.5 mm','65 mm',   '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan', '100'],
+        ['15 Watt', '1800 lm', '137.5 mm','69.8 mm', '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan', '100'],
       ];
 
-      // Lebar kolom: fixed (HP) / flex (Tablet)
+      // Lebar kolom (harga dihapus ⇒ kolom jadi 9)
       const phoneWidths = <int, TableColumnWidth>{
         0: FixedColumnWidth(100), // Watt
         1: FixedColumnWidth(100), // Lumen
         2: FixedColumnWidth(90),  // Tinggi
         3: FixedColumnWidth(90),  // Diameter
-        4: FixedColumnWidth(130), // Harga
-        5: FixedColumnWidth(90),  // 3000K
-        6: FixedColumnWidth(180), // Ket 3000K
-        7: FixedColumnWidth(90),  // 6500K
-        8: FixedColumnWidth(180), // Ket 6500K
-        9: FixedColumnWidth(90),  // Isi/Dus
+        4: FixedColumnWidth(90),  // 3000K
+        5: FixedColumnWidth(180), // Ket 3000K
+        6: FixedColumnWidth(90),  // 6500K
+        7: FixedColumnWidth(180), // Ket 6500K
+        8: FixedColumnWidth(90),  // Isi/Dus
       };
       final tabletWidths = <int, TableColumnWidth>{
         0: const FlexColumnWidth(1.0),
         1: const FlexColumnWidth(1.0),
         2: const FlexColumnWidth(1.0),
         3: const FlexColumnWidth(1.0),
-        4: const FlexColumnWidth(1.2),
-        5: const FlexColumnWidth(0.9),
-        6: const FlexColumnWidth(1.4),
-        7: const FlexColumnWidth(0.9),
-        8: const FlexColumnWidth(1.4),
-        9: const FlexColumnWidth(0.9),
+        4: const FlexColumnWidth(0.9),
+        5: const FlexColumnWidth(1.4),
+        6: const FlexColumnWidth(0.9),
+        7: const FlexColumnWidth(1.4),
+        8: const FlexColumnWidth(0.9),
       };
 
       final table = Table(
@@ -216,7 +214,6 @@ class BulbScreen extends StatelessWidget {
             th('Lumen'),
             th('Tinggi'),
             th('Diameter'),
-            th('Harga'),
             th('Warna'),
             th('Keterangan'),
             th('Warna'),
@@ -231,18 +228,16 @@ class BulbScreen extends StatelessWidget {
                 td(r[1]),
                 td(r[2]),
                 td(r[3]),
-                td(r[4]),
-                tdYellow(r[5]), // 3000K kuning
-                td(r[6]),
-                tdBlue(r[7]),   // 6500K biru
+                tdYellow(r[4]), // 3000K kuning
+                td(r[5]),
+                tdBlue(r[6]),   // 6500K biru
+                td(r[7]),
                 td(r[8]),
-                td(r[9]),
               ],
             ),
         ],
       );
 
-      // Panel tabel rounded + scroll horizontal di HP
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Container(
@@ -253,7 +248,8 @@ class BulbScreen extends StatelessWidget {
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 1140),
+                    // dulu 1140 (ada kolom harga), sekarang 1010 cukup
+                    constraints: const BoxConstraints(minWidth: 1010),
                     child: table,
                   ),
                 ),

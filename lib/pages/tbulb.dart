@@ -138,33 +138,32 @@ class TBulbPage extends StatelessWidget {
           ),
         );
 
-    // ---- Tabel T-Bulb (kolom: Varian Watt | Dimensi Produk | Harga | Warna | Keterangan) ----
+    // ---- Tabel T-Bulb (tanpa kolom Harga) ----
     Widget specTable() {
+      // Kolom: Varian Watt | Dimensi Produk | Warna | Keterangan
       const rows = [
-        ['5 Watt',  '45mm x 100mm',     'Rp 13.900', '6500K', 'Cahaya Putih Kebiruan'],
-        ['10 Watt', '59mm x 115mm',     'Rp 20.900', '6500K', 'Cahaya Putih Kebiruan'],
-        ['15 Watt', '69mm x 133mm',     'Rp 25.900', '6500K', 'Cahaya Putih Kebiruan'],
-        ['20 Watt', '80mm x 145mm',     'Rp 32.900', '6500K', 'Cahaya Putih Kebiruan'],
-        ['30 Watt', '100mm x 180mm',    'Rp 46.900', '6500K', 'Cahaya Putih Kebiruan'],
-        ['40 Watt', '113mm x 200mm',    'Rp 65.900', '6500K', 'Cahaya Putih Kebiruan'],
-        ['50 Watt', '113mm x 215mm',    'Rp 80.900', '6500K', 'Cahaya Putih Kebiruan'],
-        ['60 Watt', '113.4mm x 215mm',  'Rp 93.900', '6500K', 'Cahaya Putih Kebiruan'],
+        ['5 Watt',  '45mm x 100mm',     '6500K', 'Cahaya Putih Kebiruan'],
+        ['10 Watt', '59mm x 115mm',     '6500K', 'Cahaya Putih Kebiruan'],
+        ['15 Watt', '69mm x 133mm',     '6500K', 'Cahaya Putih Kebiruan'],
+        ['20 Watt', '80mm x 145mm',     '6500K', 'Cahaya Putih Kebiruan'],
+        ['30 Watt', '100mm x 180mm',    '6500K', 'Cahaya Putih Kebiruan'],
+        ['40 Watt', '113mm x 200mm',    '6500K', 'Cahaya Putih Kebiruan'],
+        ['50 Watt', '113mm x 215mm',    '6500K', 'Cahaya Putih Kebiruan'],
+        ['60 Watt', '113.4mm x 215mm',  '6500K', 'Cahaya Putih Kebiruan'],
       ];
 
       // Lebar kolom (HP fixed, Tablet flex)
       const phoneWidths = <int, TableColumnWidth>{
         0: FixedColumnWidth(120), // Varian Watt
         1: FixedColumnWidth(200), // Dimensi
-        2: FixedColumnWidth(140), // Harga
-        3: FixedColumnWidth(90),  // Warna
-        4: FixedColumnWidth(220), // Keterangan
+        2: FixedColumnWidth(90),  // Warna
+        3: FixedColumnWidth(220), // Keterangan
       };
       final tabletWidths = <int, TableColumnWidth>{
         0: const FlexColumnWidth(1.1),
         1: const FlexColumnWidth(1.6),
-        2: const FlexColumnWidth(1.1),
-        3: const FlexColumnWidth(.9),
-        4: const FlexColumnWidth(1.6),
+        2: const FlexColumnWidth(.9),
+        3: const FlexColumnWidth(1.6),
       };
 
       final table = Table(
@@ -178,19 +177,18 @@ class TBulbPage extends StatelessWidget {
           TableRow(children: [
             th('Varian Watt'),
             th('Dimensi Produk'),
-            th('Harga'),
             th('Warna'),
             th('Keterangan'),
           ]),
           for (final r in rows)
             TableRow(
               decoration: const BoxDecoration(color: bgPage),
-              children: [td(r[0]), td(r[1]), td(r[2]), tdBlue(r[3]), td(r[4])],
+              children: [td(r[0]), td(r[1]), tdBlue(r[2]), td(r[3])],
             ),
         ],
       );
 
-      // Panel tabel dibungkus ClipRRect agar sudut melengkung terlihat (gaya Downlight)
+      // Panel tabel dibungkus ClipRRect agar sudut melengkung terlihat
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Container(
@@ -200,7 +198,11 @@ class TBulbPage extends StatelessWidget {
               ? table
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: ConstrainedBox(constraints: const BoxConstraints(minWidth: 750), child: table),
+                  child: ConstrainedBox(
+                    // 120 + 200 + 90 + 220 ≈ 630
+                    constraints: const BoxConstraints(minWidth: 650),
+                    child: table,
+                  ),
                 ),
         ),
       );

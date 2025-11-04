@@ -4,229 +4,158 @@
     <meta charset="utf-8" />
     <title>Order {{ $order->no_order }}</title>
     <style>
-        /* Reset sederhana */
-        body, h1, h2, h3, p, table, th, td, div, span {
-            margin: 0;
-            padding: 0;
+        /* ===== Reset & Layout Compact ===== */
+        * { box-sizing: border-box; }
+        html,body { margin:0; padding:0; }
+        body { font-family: Arial, sans-serif; color:#333; font-size:10px; line-height:1.3; padding:16px 24px; }
+
+        .row { display: table; width: 100%; table-layout: fixed; }
+        .col { display: table-cell; vertical-align: top; }
+        .text-right { text-align:right; }
+        .muted { color:#666; }
+
+        h1 { font-size:18px; margin:0 0 4px; }
+        h2 { font-size:13px; margin:12px 0 6px; }
+        h3 { font-size:11px; margin:8px 0 4px; }
+
+        .header { margin-bottom: 6px; }
+        .logo { height: 60px; }
+        .meta p { margin: 1px 0; }
+
+        /* ===== Tabel Produk (kolom fixed + align konsisten) ===== */
+        table.tbl{
+            width:100%; border-collapse:collapse; margin-top:6px; font-size:9px;
+            table-layout:fixed;
         }
-        body {
-            font-family: Arial, sans-serif;
-            color: #333;
-            padding: 0 40px;
-            font-size: 12px;
-            line-height: 1.4;
+        table.tbl th, table.tbl td{
+            padding:4px 6px;
+            vertical-align:middle;
+            border-bottom:1px solid #ddd;
+            word-break:break-word;
+        }
+        table.tbl thead th{
+            background:#f5f5f5;
+            border-bottom:1px solid #555;
+            white-space:nowrap;
         }
 
-        /* HEADER dengan tabel 2 kolom */
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        .header-left, .header-right {
-            vertical-align: middle;
-            padding: 0;
-        }
-        .header-left {
-            width: 60%;
-        }
-        .header-right {
-            width: 40%;
-            text-align: right;
-        }
-        .company-left h2 {
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-        .company-left p {
-            font-size: 12px;
-            color: #555;
-        }
-        /* Logo diperbesar supaya proporsional */
-        .logo-nano {
-            height: 120px;
-            display: inline-block;
-            margin-bottom: 8px;
-        }
-        .order-info p {
-            margin: 2px 0;
-            font-size: 12px;
-            color: #333;
-        }
+        /* Kolom 1–4 di tengah, kolom 5–7 sesuai peran */
+        table.tbl thead th:nth-child(1),
+        table.tbl thead th:nth-child(2),
+        table.tbl thead th:nth-child(3),
+        table.tbl thead th:nth-child(4),
+        table.tbl tbody td:nth-child(1),
+        table.tbl tbody td:nth-child(2),
+        table.tbl tbody td:nth-child(3),
+        table.tbl tbody td:nth-child(4) { text-align:center; }
 
-        /* BAGIAN “BILL TO” */
-        .bill-to {
-            margin-top: 50px; /* beri jarak vertikal lebih besar */
-        }
-        .bill-to h3 {
-            font-size: 14px;
-            margin-bottom: 6px;
-        }
-        .bill-to p {
-            margin: 2px 0;
-            font-size: 12px;
-        }
+        table.tbl thead th:nth-child(5),
+        table.tbl tbody td:nth-child(5){ text-align:center; }       /* Pcs */
 
-        /* BAGIAN “SALES & TOKO” */
-        .sales {
-            margin-top: 20px;
-        }
-        .sales h3 {
-            font-size: 14px;
-            margin-bottom: 6px;
-        }
-        .sales p {
-            margin: 2px 0;
-            font-size: 12px;
-        }
+        table.tbl thead th:nth-child(6),
+        table.tbl tbody td:nth-child(6),
+        table.tbl thead th:nth-child(7),
+        table.tbl tbody td:nth-child(7){ text-align:right; }        /* Harga & Subtotal */
 
-        /* TABEL DAFTAR PRODUK */
-        table.items {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            font-size: 12px;
-        }
-        table.items thead th {
-            background: #f5f5f5;
-            border-bottom: 2px solid #555;
-            padding: 8px;
-            text-align: left;
-        }
-        table.items tbody td {
-            border-bottom: 1px solid #ddd;
-            padding: 8px;
-        }
-        .text-right {
-            text-align: right;
-        }
+        table.tbl tbody td:nth-child(6),
+        table.tbl tbody td:nth-child(7){ font-variant-numeric: tabular-nums; }
 
-        /* BAGIAN INFORMASI PEMBAYARAN & TOTALS dalam satu baris */
-        .info-totals-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .info-cell {
-            vertical-align: top;
-            width: 60%;
-            /* Di sini kita atur agar "Informasi Pembayaran & Pesanan" turun
-               sampai sejajar dengan baris "Diskon 2" di tabel totals. */
-            padding-top: 115px;
-            padding-right: 20px;
-        }
-        .totals-cell {
-            vertical-align: top;
-            width: 40%;
-            text-align: right;
-        }
+        /* ===== Info blocks & totals ===== */
+        .section { margin-top:10px; }
+        .pair { display:flex; gap:8px; }
+        .pair > div { flex:1; }
 
-        /* STYLE untuk BAGIAN INFORMASI PEMBAYARAN & PESANAN */
-        .order-info {
-            margin: 0; /* margin diatur oleh sel tabel */
-        }
-        .order-info h3 {
-            font-size: 14px;
-            margin-bottom: 6px;
-        }
-        .order-info p {
-            margin: 2px 0;
-            font-size: 12px;
-        }
+        .info-table { width:100%; border-collapse:collapse; font-size:9px; }
+        .info-table td { padding:2px 0; vertical-align:top; }
+        .label { width:140px; color:#555; }
 
-        /* STYLE untuk TABEL TOTALS */
-        .totals {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-        .totals th, .totals td {
-            padding: 6px;
-        }
-        .totals th {
-            text-align: left;
-            border: none;
-        }
-        .totals td {
-            text-align: right;
-            border: none;
-        }
-        .totals .no-border {
-            border: none !important;
-        }
-        .totals .line-strong {
-            border-top: 1px solid #333;
-        }
+        .totals { width:100%; border-collapse:collapse; font-size:10px; }
+        .totals th, .totals td { padding:4px 0; }
+        .totals th { text-align:left; border:none; }
+        .totals td { text-align:right; border:none; }
+        .line-strong { border-top:1px solid #333; padding-top:4px; }
 
-        /* FOOTER TERIMA KASIH */
-        footer {
-            clear: both;
-            margin-top: 80px;
-            font-size: 11px;
-            color: #666;
-            text-align: center;
-        }
+        footer { margin-top:24px; text-align:center; font-size:9px; color:#666; }
     </style>
 </head>
 <body>
 
-    {{-- HEADER: gunakan tabel agar vertikal-align bekerja --}}
-    <table class="header-table">
-        <tr>
-            {{-- Kiri: Nama PT & Alamat --}}
-            <td class="header-left">
-                <div class="company-left">
-                    <h2>PT. Berdikari Inti Gemilang</h2>
-                    <p>Jl. Contoh No.123, Jakarta • Telp: (021) 1234 5678</p>
-                </div>
-            </td>
+    {{-- HEADER --}}
+    <div class="row header">
+        <div class="col" style="width:60%;">
+            <h1>PT. Berdikari Inti Gemilang</h1>
+            <div class="muted"><strong>Head Office:</strong> Jl. Boulevard Timur Blok. A/35 Green Court Viko Kapuk, Cengkareng, Jakarta Barat 11730</div>
+            <div class="muted"><strong>Factory 1:</strong> Kawasan Industri Pasar Kemis. JI Merdeka Km7 No. 8-9 Cilongok, Sukamantri, Pasar Kemis, Tangerang Banten 15560</div>
+            <div class="muted"><strong>Factory 2:</strong> Kawasan Industri Pasar Kemis. Jl Agarindo No. 9A Cilongok, Sukamantri, Pasar Kemis, Tangerang Banten 15560</div>
+        </div>
+        <div class="col text-right" style="width:40%;">
+            <img src="{{ public_path('assets/image/logo-invoice.png') }}" alt="Logo" class="logo">
+            <div class="meta" style="margin-top:4px;">
+                <p><strong>No Order#</strong> {{ $order->no_order ?? '-' }}</p>
+                <p><strong>Tanggal</strong> {{ optional($order->created_at)->format('d/m/Y') ?? '-' }}</p>
+            </div>
+        </div>
+    </div>
 
-            {{-- Kanan: Logo + Info order --}}
-            <td class="header-right">
-                <!-- Karena ini PDF, pakai public_path() supaya Dompdf bisa baca file fisik -->
-                <img src="{{ public_path('assets/image/logo-invoice.png') }}" class="logo-nano" alt="Logo Nanolite">
-                <div class="order-info">
-                    <p><strong>No Order#</strong> {{ $order->no_order }}</p>
-                    <p><strong>Date </strong> {{ $order->created_at->format('d/m/Y') }}</p>
-                </div>
-            </td>
-        </tr>
-    </table>
+    {{-- Normalisasi alamat --}}
+    @php
+        $alamatLines = [];
+        if (is_array($order->address)) {
+            foreach ($order->address as $a) {
+                $alamatLines[] = implode(', ', array_filter([
+                    $a['detail_alamat'] ?? null,
+                    $a['kelurahan'] ?? null,
+                    $a['kecamatan'] ?? null,
+                    $a['kota_kab'] ?? null,
+                    $a['provinsi'] ?? null,
+                    $a['kode_pos'] ?? null,
+                ], fn($v) => filled($v) && $v !== '-'));
+            }
+        } else {
+            $alamatLines[] = $order->address ?? '-';
+        }
+    @endphp
 
-    {{-- BILL TO --}}
-    <section class="bill-to">
-    <h3>Bill To:</h3>
-    <p><strong>{{ $order->customer->name }}</strong></p>
-    <p>Kategori Customer: {{ $order->customerCategory->name ?? '-' }}</p>
-    @if(is_array($order->address))
-        @foreach($order->address as $addr)
-            <p>
-                {{ $addr['detail_alamat'] ?? '-' }},
-                {{ $addr['kelurahan'] ?? '-' }},
-                {{ $addr['kecamatan'] ?? '-' }},
-                {{ $addr['kota_kab'] ?? '-' }},
-                {{ $addr['provinsi'] ?? '-' }},
-                {{ $addr['kode_pos'] ?? '-' }}
-            </p>
-        @endforeach
-    @else
-        <p>Alamat: {{ $order->address }}</p>
-    @endif
-    <p>Telp: {{ $order->phone }}</p>
-</section>
+    <div class="section pair">
+        <div>
+            <h2>Bill To</h2>
+            <table class="info-table">
+                <tr><td class="label">Customer</td><td><strong>{{ $order->customer->name ?? '-' }}</strong></td></tr>
+                <tr><td class="label">Kategori Customer</td><td>{{ $order->customerCategory->name ?? '-' }}</td></tr>
+                <tr><td class="label">Telepon</td><td>{{ $order->phone ?? '-' }}</td></tr>
+                <tr>
+                    <td class="label">Alamat</td>
+                    <td>
+                        @foreach($alamatLines as $line)
+                            {{ $line ?: '-' }}@if(!$loop->last)<br>@endif
+                        @endforeach
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div>
+            <h2>Informasi Sales</h2>
+            <table class="info-table">
+                <tr><td class="label">Department</td><td>{{ $order->department->name ?? '-' }}</td></tr>
+                <tr><td class="label">Karyawan</td><td>{{ $order->employee->name ?? '-' }}</td></tr>
+                <tr><td class="label">Telepon Sales</td><td>{{ $order->employee->phone ?? '-' }}</td></tr>
+                <tr><td class="label">Program Pelanggan</td><td>{{ $order->customerProgram->name ?? '-' }}</td></tr>
+            </table>
+        </div>
+    </div>
 
-
-    {{-- SALES & TOKO --}}
-    <section class="sales">
-        <h3>Informasi Sales & Toko</h3>
-        <p>Karyawan: {{ $order->employee->name }}</p>
-        <p>Telp Sales: {{ $order->employee->phone }}</p>
-        
-    </section>
-
-    {{-- TABEL DAFTAR PRODUK --}}
-    <table class="items">
+    {{-- DETAIL PRODUK --}}
+    <h2 style="margin-top:12px;">Detail Produk</h2>
+    <table class="tbl">
+        <colgroup>
+            <col style="width:16%">
+            <col style="width:16%">
+            <col style="width:26%">
+            <col style="width:12%">
+            <col style="width:6%">
+            <col style="width:12%">
+            <col style="width:12%">
+        </colgroup>
         <thead>
             <tr>
                 <th>Brand</th>
@@ -245,84 +174,106 @@
                     <td>{{ $item['category_name'] }}</td>
                     <td>{{ $item['product_name'] }}</td>
                     <td>{{ $item['color'] }}</td>
-                    <td>{{ $item['quantity'] }}</td>
-                    <td>Rp {{ number_format($item['price'], 0, ',', '.') }}</td>
-                    <td>Rp {{ number_format($item['subtotal'], 0, ',', '.') }}</td>
+                    <td>{{ (int)($item['quantity'] ?? 0) }}</td>
+                    <td>Rp {{ number_format((int)($item['price'] ?? 0), 0, ',', '.') }}</td>
+                    <td>Rp {{ number_format((int)($item['subtotal'] ?? 0), 0, ',', '.') }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
 
-    {{-- BARIS INFORMASI PEMBAYARAN (KIRI) DAN TABEL TOTALS (KANAN) --}}
-    <table class="info-totals-table">
-        <tr>
-            {{-- SEL KIRI: Informasi Pembayaran & Pesanan --}}
-            <td class="info-cell">
-                <section class="order-info">
-                    <h3>Informasi Pembayaran & Pesanan</h3>
-                    <p>Metode Pembayaran: {{ ucfirst($order->payment_method) }}</p>
-                    <p>Status Pembayaran: {{ ucfirst($order->status_pembayaran) }}</p>
-                    <p>Program: {{ $order->customerProgram?->name ?: '-' }}</p>
-                    <p>Status Pesanan: {{ ucfirst($order->status) }}</p>
-                </section>
-            </td>
+    {{-- INFORMASI ORDER & TOTAL --}}
+    <div class="section pair" style="gap:12px;">
+        <div>
+            <h2>Informasi Pembayaran & Pesanan</h2>
+            <table class="info-table">
+                <tr><td class="label">Metode Pembayaran</td><td>{{ ucfirst($order->payment_method ?? '-') }}</td></tr>
+                @if(($order->payment_method ?? null) === 'tempo')
+                    <tr><td class="label">Jatuh Tempo</td><td>{{ optional($order->payment_due_until)->format('d/m/Y') ?? '-' }}</td></tr>
+                @endif
+                <tr><td class="label">Status Pembayaran</td><td>{{ ucfirst($order->status_pembayaran ?? '-') }}</td></tr>
+                <tr><td class="label">Status Pengajuan</td>
+                    <td>{{ match($order->status_pengajuan){
+                        'approved'=>'Disetujui','rejected'=>'Ditolak','pending'=>'Pending',
+                        default=>ucfirst((string)$order->status_pengajuan)
+                    } }}</td></tr>
+                <tr><td class="label">Status Produk</td>
+                    <td>{{ match($order->status_product){
+                        'ready_stock'=>'Ready Stock','sold_out'=>'Sold Out','rejected'=>'Ditolak','pending'=>'Pending',
+                        default=>ucfirst((string)$order->status_product)
+                    } }}</td></tr>
+                <tr><td class="label">Status Order</td>
+                    <td>{{ match($order->status_order){
+                        'confirmed'=>'Confirmed','processing'=>'Processing','on_hold'=>'On Hold','delivered'=>'Delivered',
+                        'completed'=>'Completed','cancelled'=>'Cancelled','rejected'=>'Ditolak','pending'=>'Pending',
+                        default=>ucfirst((string)$order->status_order)
+                    } }}</td></tr>
+                @if(($order->status_order ?? null)==='on_hold')
+                    <tr><td class="label">Alasan Hold</td><td>{{ $order->on_hold_comment ?? '-' }}</td></tr>
+                    <tr><td class="label">Batas Hold</td><td>{{ optional($order->on_hold_until)->format('d/m/Y') ?? '-' }}</td></tr>
+                @endif
+            </table>
+        </div>
 
-            {{-- SEL KANAN: Tabel Totals --}}
-            <td class="totals-cell">
-                <table class="totals">
-                    <tr>
-                        <th>Subtotal</th>
-                        <td>Rp {{ number_format($order->total_harga, 0, ',', '.') }}</td>
-                    </tr>
-                    @if($order->diskons_enabled)
-                        <tr>
-                            <th>Diskon ({{ $order->diskon_1 }}%)</th>
-                            <td>- Rp {{ number_format(($order->diskon_1/100) * $order->total_harga, 0, ',', '.') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Penjelasan Diskon ({{ $order->diskon_1 }}%)</th>
-                            <td>{{ $order->penjelasan_diskon_1 }}</td>
-                        </tr>
-                        <tr>
-                            <th>Diskon ({{ $order->diskon_2 }}%)</th>
-                            <td>- Rp {{ number_format(($order->diskon_2/100) * $order->total_harga, 0, ',', '.') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Penjelasan Diskon ({{ $order->diskon_2 }}%)</th>
-                            <td>{{ $order->penjelasan_diskon_2 }}</td>
-                        </tr>
-                    @endif
+        <div>
+            <h2>Total</h2>
+            <table class="totals">
+                <tr>
+                    <th>Subtotal</th>
+                    <td>Rp {{ number_format((int)($order->total_harga ?? 0), 0, ',', '.') }}</td>
+                </tr>
 
-                    @if($order->reward_enabled)
-                        <tr>
-                            <th>Reward Point:</th>
-                            <td>{{ $order->reward_point ?? '-' }}</td>
-                        </tr>
-                    @endif
+                @php
+                    $diskonsEnabled = (bool) ($order->diskons_enabled ?? false);
+                    $ds = [
+                        ['p'=>$order->diskon_1 ?? 0, 'desc'=>$order->penjelasan_diskon_1 ?? null],
+                        ['p'=>$order->diskon_2 ?? 0, 'desc'=>$order->penjelasan_diskon_2 ?? null],
+                        ['p'=>$order->diskon_3 ?? 0, 'desc'=>$order->penjelasan_diskon_3 ?? null],
+                        ['p'=>$order->diskon_4 ?? 0, 'desc'=>$order->penjelasan_diskon_4 ?? null],
+                    ];
+                    $running = (float) ($order->total_harga ?? 0);
+                @endphp
 
-                    @if($order->program_enabled)
-                        <tr>
-                            <th>Program Point:</th>
-                            <td>{{ $order->jumlah_program ?? '-' }}</td>
-                        </tr>
-                    @endif
-                    
-                    <tr>
-                        <th class="line-strong"><strong>Grand Total</strong></th>
-                        <td class="line-strong">
-                            <strong>Rp {{ number_format($order->total_harga_after_tax, 0, ',', '.') }}</strong>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
+                @if($diskonsEnabled)
+                    @foreach($ds as $i => $d)
+                        @php
+                            $p = max(0,min(100,(float)$d['p']));
+                            $cut = 0;
+                            if ($p > 0) { $cut = $running * ($p/100); $running -= $cut; }
+                        @endphp
+                        @if($p > 0)
+                            <tr>
+                                <th>Diskon {{ $i+1 }} ({{ rtrim(rtrim(number_format($p,2,'.',''), '0'),'.') }}%)</th>
+                                <td>- Rp {{ number_format((int)round($cut), 0, ',', '.') }}</td>
+                            </tr>
+                            @if(!empty($d['desc']))
+                                <tr>
+                                    <th>Penjelasan Diskon {{ $i+1 }}</th>
+                                    <td style="text-align:left;">{{ $d['desc'] }}</td>
+                                </tr>
+                            @endif
+                        @endif
+                    @endforeach
+                @endif
 
-    {{-- FOOTER --}}
+                @if((int)($order->reward_point ?? 0) > 0)
+                    <tr><th>Reward Point</th><td>{{ (int) $order->reward_point }}</td></tr>
+                @endif
+                @if((int)($order->jumlah_program ?? 0) > 0)
+                    <tr><th>Program Point</th><td>{{ (int) $order->jumlah_program }}</td></tr>
+                @endif
+
+                <tr>
+                    <th class="line-strong"><strong>Grand Total</strong></th>
+                    <td class="line-strong"><strong>Rp {{ number_format((int)($order->total_harga_after_tax ?? round($running)), 0, ',', '.') }}</strong></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
     <footer>
         <p>• Terima kasih atas kepercayaan dan kerjasama Anda. •</p>
         <p>#untungpakainanolite #murahbergaransi</p>
     </footer>
 </body>
 </html>
- 

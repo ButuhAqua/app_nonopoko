@@ -103,31 +103,29 @@ class T8TubeLightPage extends StatelessWidget {
           ),
         );
 
-    // ===== Tabel varian (pakai 1 kolom: Ukuran) =====
+    // ===== Tabel varian (tanpa kolom Harga) =====
     Widget specTable() {
-      // Kolom: Watt | Lumen | Ukuran | Harga | Warna | Keterangan | Isi/Dus
+      // Kolom: Watt | Lumen | Ukuran | Warna | Keterangan | Isi/Dus
       const rows = [
-        ['18 Watt', '100 lm/watt', '28 × 1200 mm', 'Rp 47,900', '7000K', 'Cahaya Putih Kebiruan', '30'],
+        ['18 Watt', '100 lm/watt', '28 × 1200 mm', '7000K', 'Cahaya Putih Kebiruan', '30'],
       ];
 
       // Lebar kolom
       const phoneWidths = <int, TableColumnWidth>{
         0: FixedColumnWidth(110), // Watt
         1: FixedColumnWidth(130), // Lumen
-        2: FixedColumnWidth(160), // Ukuran (gabungan)
-        3: FixedColumnWidth(130), // Harga
-        4: FixedColumnWidth(100), // Warna
-        5: FixedColumnWidth(220), // Keterangan
-        6: FixedColumnWidth(90),  // Isi/Dus
+        2: FixedColumnWidth(160), // Ukuran
+        3: FixedColumnWidth(100), // Warna
+        4: FixedColumnWidth(220), // Keterangan
+        5: FixedColumnWidth(90),  // Isi/Dus
       };
       final tabletWidths = <int, TableColumnWidth>{
         0: const FlexColumnWidth(1.0),
         1: const FlexColumnWidth(1.1),
-        2: const FlexColumnWidth(1.3), // Ukuran
-        3: const FlexColumnWidth(1.1), // Harga
-        4: const FlexColumnWidth(0.9),
-        5: const FlexColumnWidth(1.6),
-        6: const FlexColumnWidth(0.9),
+        2: const FlexColumnWidth(1.3),
+        3: const FlexColumnWidth(0.9),
+        4: const FlexColumnWidth(1.6),
+        5: const FlexColumnWidth(0.9),
       };
 
       final table = Table(
@@ -142,7 +140,6 @@ class T8TubeLightPage extends StatelessWidget {
             th('Watt'),
             th('Lumen'),
             th('Ukuran'),
-            th('Harga'),
             th('Warna'),
             th('Keterangan'),
             th('Isi/Dus'),
@@ -153,11 +150,10 @@ class T8TubeLightPage extends StatelessWidget {
               children: [
                 td(r[0]),
                 td(r[1]),
-                td(r[2]), // Ukuran gabungan
-                td(r[3]),
-                tdBlue(r[4]),
+                td(r[2]),
+                tdBlue(r[3]),
+                td(r[4]),
                 td(r[5]),
-                td(r[6]),
               ],
             ),
         ],
@@ -173,8 +169,8 @@ class T8TubeLightPage extends StatelessWidget {
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: ConstrainedBox(
-                    // 110+130+160+130+100+220+90 ≈ 940
-                    constraints: const BoxConstraints(minWidth: 940),
+                    // 110 + 130 + 160 + 100 + 220 + 90 ≈ 810
+                    constraints: const BoxConstraints(minWidth: 810),
                     child: table,
                   ),
                 ),

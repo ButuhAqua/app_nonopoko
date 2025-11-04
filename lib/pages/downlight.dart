@@ -162,33 +162,35 @@ class DownlightPikoPage extends StatelessWidget {
           ),
         );
 
-    // ===== Tabel Downlight (7 kolom, 3000K kuning & 6500K biru) =====
+    // ===== Tabel Downlight (tanpa kolom Harga) =====
     Widget specTable() {
+      // Kolom: Varian Watt | Dimensi Produk | Warna | Keterangan | Warna | Keterangan
       const rows = [
-        ['6 Watt',  '108mm x 25mm',  'Rp 23.900', '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan'],
-        ['9 Watt',  '125mm x 25mm',  'Rp 30.900', '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan'],
-        ['12 Watt', '150mm x 25mm',  'Rp 40.900', '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan'],
-        ['18 Watt', '175mm x 25mm',  'Rp 49.900', '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan'],
+        ['6 Watt',  '108mm x 25mm',  '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan'],
+        ['9 Watt',  '125mm x 25mm',  '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan'],
+        ['12 Watt', '150mm x 25mm',  '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan'],
+        ['18 Watt', '175mm x 25mm',  '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan'],
       ];
 
+      // Lebar kolom (HP fixed, Tablet flex)
       const phoneWidths = <int, TableColumnWidth>{
-        0: FixedColumnWidth(120),
-        1: FixedColumnWidth(200),
-        2: FixedColumnWidth(140),
-        3: FixedColumnWidth(120),
-        4: FixedColumnWidth(220),
-        5: FixedColumnWidth(120),
-        6: FixedColumnWidth(220),
+        0: FixedColumnWidth(120), // Varian Watt
+        1: FixedColumnWidth(200), // Dimensi
+        2: FixedColumnWidth(120), // Warna (3000K)
+        3: FixedColumnWidth(220), // Keterangan 3000K
+        4: FixedColumnWidth(120), // Warna (6500K)
+        5: FixedColumnWidth(220), // Keterangan 6500K
       };
       final tabletWidths = <int, TableColumnWidth>{
         0: const FlexColumnWidth(1.1),
         1: const FlexColumnWidth(1.6),
-        2: const FlexColumnWidth(1.1),
-        3: const FlexColumnWidth(1.0),
-        4: const FlexColumnWidth(1.6),
-        5: const FlexColumnWidth(1.0),
-        6: const FlexColumnWidth(1.6),
+        2: const FlexColumnWidth(1.0),
+        3: const FlexColumnWidth(1.6),
+        4: const FlexColumnWidth(1.0),
+        5: const FlexColumnWidth(1.6),
       };
+
+      Widget badge(String t) => t == '3000K' ? tdYellow(t) : tdBlue(t);
 
       final table = Table(
         columnWidths: isTablet ? tabletWidths : phoneWidths,
@@ -201,7 +203,6 @@ class DownlightPikoPage extends StatelessWidget {
           TableRow(children: [
             th('Varian Watt'),
             th('Dimensi Produk'),
-            th('Harga'),
             th('Warna'),
             th('Keterangan'),
             th('Warna'),
@@ -213,17 +214,16 @@ class DownlightPikoPage extends StatelessWidget {
               children: [
                 td(r[0]),
                 td(r[1]),
-                td(r[2]),
-                tdYellow(r[3]), // 3000K -> kuning
-                td(r[4]),
-                tdBlue(r[5]),   // 6500K -> biru
-                td(r[6]),
+                badge(r[2]),
+                td(r[3]),
+                badge(r[4]),
+                td(r[5]),
               ],
             ),
         ],
       );
 
-      // panel tabel dibungkus ClipRRect agar sudut melengkung terlihat
+      // Panel tabel dibungkus ClipRRect agar sudut melengkung terlihat
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Container(
@@ -234,7 +234,8 @@ class DownlightPikoPage extends StatelessWidget {
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 1220),
+                    // 120 + 200 + 120 + 220 + 120 + 220 ≈ 1.000
+                    constraints: const BoxConstraints(minWidth: 1000),
                     child: table,
                   ),
                 ),

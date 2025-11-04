@@ -173,31 +173,29 @@ class LSOutdoorPage extends StatelessWidget {
       return tdBlue(temp); // default 6500K
     }
 
-    // ===== TABEL VARIAN (7 kolom) =====
+    // ===== TABEL VARIAN (tanpa kolom Harga) =====
     Widget specTable() {
-      // Kolom: Watt/m | Lumen | Ukuran | Harga | Warna | Keterangan | Isi/Dus
+      // Kolom: Watt/m | Lumen | Ukuran | Warna | Keterangan | Isi/Dus
       const rows = [
-        ['9 w/m', '120 lm/watt', '5000mm × 8mm × 3mm', 'Rp 237.900', '3000K', 'Cahaya Putih Kekuningan', '40'],
-        ['9 w/m', '120 lm/watt', '5000mm × 8mm × 3mm', 'Rp 237.900', '6500K', 'Cahaya Putih Kebiruan', '40'],
+        ['9 w/m', '120 lm/watt', '5000mm × 8mm × 3mm', '3000K', 'Cahaya Putih Kekuningan', '40'],
+        ['9 w/m', '120 lm/watt', '5000mm × 8mm × 3mm', '6500K', 'Cahaya Putih Kebiruan',  '40'],
       ];
 
       const phoneWidths = <int, TableColumnWidth>{
-        0: FixedColumnWidth(110),
-        1: FixedColumnWidth(120),
-        2: FixedColumnWidth(210),
-        3: FixedColumnWidth(130),
-        4: FixedColumnWidth(90),
-        5: FixedColumnWidth(180),
-        6: FixedColumnWidth(90),
+        0: FixedColumnWidth(110), // Watt/m
+        1: FixedColumnWidth(120), // Lumen
+        2: FixedColumnWidth(210), // Ukuran
+        3: FixedColumnWidth(90),  // Warna
+        4: FixedColumnWidth(180), // Keterangan
+        5: FixedColumnWidth(90),  // Isi/Dus
       };
       final tabletWidths = <int, TableColumnWidth>{
         0: const FlexColumnWidth(1.0),
         1: const FlexColumnWidth(1.0),
         2: const FlexColumnWidth(1.6),
-        3: const FlexColumnWidth(1.2),
-        4: const FlexColumnWidth(0.9),
-        5: const FlexColumnWidth(1.4),
-        6: const FlexColumnWidth(0.9),
+        3: const FlexColumnWidth(0.9),
+        4: const FlexColumnWidth(1.4),
+        5: const FlexColumnWidth(0.9),
       };
 
       final table = Table(
@@ -212,7 +210,6 @@ class LSOutdoorPage extends StatelessWidget {
             th('Varian Watt'),
             th('Lumen'),
             th('Ukuran'),
-            th('Harga'),
             th('Warna'),
             th('Keterangan'),
             th('Isi/Dus'),
@@ -224,10 +221,9 @@ class LSOutdoorPage extends StatelessWidget {
                 td(r[0]),
                 td(r[1]),
                 td(r[2]),
-                td(r[3]),
-                badge(r[4]),
+                badge(r[3]),
+                td(r[4]),
                 td(r[5]),
-                td(r[6]),
               ],
             ),
         ],
@@ -243,7 +239,8 @@ class LSOutdoorPage extends StatelessWidget {
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 940),
+                    // 110+120+210+90+180+90 ≈ 800
+                    constraints: const BoxConstraints(minWidth: 800),
                     child: table,
                   ),
                 ),

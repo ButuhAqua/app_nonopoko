@@ -135,33 +135,32 @@ class MultipackPage extends StatelessWidget {
           ),
         );
 
-    // Tabel varian (8 kolom — seperti Bulb style)
+    // Tabel varian (tanpa kolom Harga)
     Widget specTable() {
-      // Watt | Lumen | Tinggi | Diameter | Harga | Warna | Keterangan | Isi/Dus
+      // Watt | Lumen | Tinggi | Diameter | Warna | Keterangan | Isi/Dus
       const rows = [
-        ['5 Watt', '600 lm', '105 mm', '55 mm', 'Rp 71.900', '6500K', 'Cahaya Putih Kebiruan', '24 Pack'],
-        ['12 Watt', '1440 lm', '125.5 mm', '65 mm', 'Rp 130.900', '6500K', 'Cahaya Putih Kebiruan', '24 Pack'],
+        ['5 Watt',  '600 lm',  '105 mm',  '55 mm',   '6500K', 'Cahaya Putih Kebiruan', '24 Pack'],
+        ['12 Watt', '1440 lm', '125.5 mm','65 mm',   '6500K', 'Cahaya Putih Kebiruan', '24 Pack'],
       ];
 
+      // Lebar kolom: fixed (HP) / flex (Tablet)
       const phoneWidths = <int, TableColumnWidth>{
-        0: FixedColumnWidth(120),
-        1: FixedColumnWidth(110),
-        2: FixedColumnWidth(100),
-        3: FixedColumnWidth(100),
-        4: FixedColumnWidth(130),
-        5: FixedColumnWidth(100),
-        6: FixedColumnWidth(200),
-        7: FixedColumnWidth(110),
+        0: FixedColumnWidth(120), // Watt
+        1: FixedColumnWidth(110), // Lumen
+        2: FixedColumnWidth(100), // Tinggi
+        3: FixedColumnWidth(100), // Diameter
+        4: FixedColumnWidth(100), // Warna
+        5: FixedColumnWidth(200), // Keterangan
+        6: FixedColumnWidth(110), // Isi/Dus
       };
       final tabletWidths = <int, TableColumnWidth>{
         0: const FlexColumnWidth(1.0),
         1: const FlexColumnWidth(0.9),
         2: const FlexColumnWidth(0.9),
         3: const FlexColumnWidth(0.9),
-        4: const FlexColumnWidth(1.2),
-        5: const FlexColumnWidth(0.9),
-        6: const FlexColumnWidth(1.6),
-        7: const FlexColumnWidth(0.9),
+        4: const FlexColumnWidth(0.9),
+        5: const FlexColumnWidth(1.6),
+        6: const FlexColumnWidth(0.9),
       };
 
       final table = Table(
@@ -177,7 +176,6 @@ class MultipackPage extends StatelessWidget {
             th('Lumen'),
             th('Tinggi'),
             th('Diameter'),
-            th('Harga'),
             th('Warna'),
             th('Keterangan'),
             th('Isi/Dus'),
@@ -185,7 +183,15 @@ class MultipackPage extends StatelessWidget {
           for (final r in rows)
             TableRow(
               decoration: const BoxDecoration(color: bgPage),
-              children: [td(r[0]), td(r[1]), td(r[2]), td(r[3]), td(r[4]), tdBlue(r[5]), td(r[6]), td(r[7])],
+              children: [
+                td(r[0]),
+                td(r[1]),
+                td(r[2]),
+                td(r[3]),
+                tdBlue(r[4]),
+                td(r[5]),
+                td(r[6]),
+              ],
             ),
         ],
       );
@@ -200,7 +206,8 @@ class MultipackPage extends StatelessWidget {
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 1070),
+                    // semula 1070 (ada Harga), cukup ~920 sekarang
+                    constraints: const BoxConstraints(minWidth: 920),
                     child: table,
                   ),
                 ),

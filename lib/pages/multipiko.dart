@@ -124,28 +124,28 @@ class MultipackPikoPage extends StatelessWidget {
           ),
         );
 
-    // ====== TABLE data & layout ======
+    // ====== TABLE data & layout (tanpa kolom Harga) ======
     Widget specTable() {
+      // Kolom: Varian Watt | Dimensi Produk | Warna | Keterangan
       const rows = [
-        ['5 Watt',  '55mm x 102mm', 'Rp 45.900', '6500K', 'Cahaya Putih Kebiruan'],
-        ['7 Watt',  '59mm x 115mm', 'Rp 51.900', '6500K', 'Cahaya Putih Kebiruan'],
-        ['9 Watt',  '59mm x 115mm', 'Rp 59.900', '6500K', 'Cahaya Putih Kebiruan'],
-        ['12 Watt', '64mm x 123mm', 'Rp 68.900', '6500K', 'Cahaya Putih Kebiruan'],
+        ['5 Watt',  '55mm x 102mm', '6500K', 'Cahaya Putih Kebiruan'],
+        ['7 Watt',  '59mm x 115mm', '6500K', 'Cahaya Putih Kebiruan'],
+        ['9 Watt',  '59mm x 115mm', '6500K', 'Cahaya Putih Kebiruan'],
+        ['12 Watt', '64mm x 123mm', '6500K', 'Cahaya Putih Kebiruan'],
       ];
 
+      // Lebar kolom (HP fixed, Tablet flex)
       const phoneWidths = <int, TableColumnWidth>{
-        0: FixedColumnWidth(140),
-        1: FixedColumnWidth(220),
-        2: FixedColumnWidth(160),
-        3: FixedColumnWidth(110),
-        4: FixedColumnWidth(240),
+        0: FixedColumnWidth(140), // Varian Watt
+        1: FixedColumnWidth(220), // Dimensi
+        2: FixedColumnWidth(110), // Warna
+        3: FixedColumnWidth(240), // Keterangan
       };
       final tabletWidths = <int, TableColumnWidth>{
         0: const FlexColumnWidth(1.1),
         1: const FlexColumnWidth(1.6),
-        2: const FlexColumnWidth(1.2),
-        3: const FlexColumnWidth(0.9),
-        4: const FlexColumnWidth(1.7),
+        2: const FlexColumnWidth(0.9),
+        3: const FlexColumnWidth(1.7),
       };
 
       final table = Table(
@@ -159,19 +159,17 @@ class MultipackPikoPage extends StatelessWidget {
           TableRow(children: [
             th('Varian Watt'),
             th('Dimensi Produk'),
-            th('Harga'),
             th('Warna'),
             th('Keterangan'),
           ]),
           for (final r in rows)
             TableRow(
               decoration: const BoxDecoration(color: bgPage),
-              children: [td(r[0]), td(r[1]), td(r[2]), tdBlue(r[3]), td(r[4])],
+              children: [td(r[0]), td(r[1]), tdBlue(r[2]), td(r[3])],
             ),
         ],
       );
 
-      // panel tabel dibungkus ClipRRect supaya sudut melengkung terlihat
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Container(
@@ -181,7 +179,11 @@ class MultipackPikoPage extends StatelessWidget {
               ? table
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: ConstrainedBox(constraints: const BoxConstraints(minWidth: 870), child: table),
+                  child: ConstrainedBox(
+                    // 140 + 220 + 110 + 240 ≈ 710
+                    constraints: const BoxConstraints(minWidth: 720),
+                    child: table,
+                  ),
                 ),
         ),
       );

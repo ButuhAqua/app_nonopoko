@@ -156,12 +156,12 @@ class CapsuleScreen extends StatelessWidget {
           ),
         );
 
-    // ===== Tabel varian (8 kolom, panel gelap rounded + scroll HP) =====
+    // ===== Tabel varian (tanpa kolom Harga) =====
     Widget capsuleTable() {
-      // Kolom: Varian Watt | Lumen | Tinggi | Diameter | Harga | Warna | Keterangan | Isi/Dus
+      // Kolom: Watt | Lumen | Tinggi | Diameter | Warna | Keterangan | Isi/Dus
       const rows = [
-        ['30 Watt', '3600 lm', '178 mm', '100 mm', 'Rp 117.900', '6500K', 'Cahaya Putih Kebiruan', '40'],
-        ['50 Watt', '6000 lm', '211 mm', '120 mm', 'Rp 266.900', '6500K', 'Cahaya Putih Kebiruan', '24'],
+        ['30 Watt', '3600 lm', '178 mm', '100 mm', '6500K', 'Cahaya Putih Kebiruan', '40'],
+        ['50 Watt', '6000 lm', '211 mm', '120 mm', '6500K', 'Cahaya Putih Kebiruan', '24'],
       ];
 
       // Lebar kolom: fixed (HP) / flex (Tablet)
@@ -170,20 +170,18 @@ class CapsuleScreen extends StatelessWidget {
         1: FixedColumnWidth(110), // Lumen
         2: FixedColumnWidth(110), // Tinggi
         3: FixedColumnWidth(110), // Diameter
-        4: FixedColumnWidth(130), // Harga
-        5: FixedColumnWidth(90),  // Warna
-        6: FixedColumnWidth(180), // Keterangan
-        7: FixedColumnWidth(90),  // Isi/Dus
+        4: FixedColumnWidth(90),  // Warna
+        5: FixedColumnWidth(180), // Keterangan
+        6: FixedColumnWidth(90),  // Isi/Dus
       };
       final tabletWidths = <int, TableColumnWidth>{
         0: const FlexColumnWidth(1.1),
         1: const FlexColumnWidth(1.0),
         2: const FlexColumnWidth(1.0),
         3: const FlexColumnWidth(1.0),
-        4: const FlexColumnWidth(1.2),
-        5: const FlexColumnWidth(0.9),
-        6: const FlexColumnWidth(1.6),
-        7: const FlexColumnWidth(0.9),
+        4: const FlexColumnWidth(0.9),
+        5: const FlexColumnWidth(1.6),
+        6: const FlexColumnWidth(0.9),
       };
 
       final table = Table(
@@ -199,7 +197,6 @@ class CapsuleScreen extends StatelessWidget {
             th('Lumen'),
             th('Tinggi'),
             th('Diameter'),
-            th('Harga'),
             th('Warna'),
             th('Keterangan'),
             th('Isi/Dus'),
@@ -212,10 +209,9 @@ class CapsuleScreen extends StatelessWidget {
                 td(r[1]),
                 td(r[2]),
                 td(r[3]),
-                td(r[4]),
-                tdBlue(r[5]),
+                tdBlue(r[4]),
+                td(r[5]),
                 td(r[6]),
-                td(r[7]),
               ],
             ),
         ],
@@ -231,7 +227,8 @@ class CapsuleScreen extends StatelessWidget {
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 1040),
+                    // semula 1040 (ada kolom harga), sekarang cukup 900
+                    constraints: const BoxConstraints(minWidth: 900),
                     child: table,
                   ),
                 ),

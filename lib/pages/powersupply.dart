@@ -87,27 +87,25 @@ class PowerSupplyPage extends StatelessWidget {
           ),
         );
 
-    // ====== Tabel varian (disesuaikan untuk Power Supply) ======
+    // ====== Tabel varian (tanpa kolom Harga) ======
     Widget specTable() {
-      // Kolom: Input | Output | Dimensi | Harga | Isi/Dus
+      // Kolom: Input | Output | Dimensi | Isi/Dus
       const rows = [
-        ['100–240Vac', '+12V = 5A (60W Max)', '114 × 28 × 47 mm', 'Rp 181.900', '100'],
+        ['100–240Vac', '+12V = 5A (60W Max)', '114 × 28 × 47 mm', '100'],
       ];
 
       // Lebar kolom: fixed (HP) / flex (Tablet)
       const phoneWidths = <int, TableColumnWidth>{
         0: FixedColumnWidth(130), // Input
-        1: FixedColumnWidth(200), // Output
+        1: FixedColumnWidth(220), // Output
         2: FixedColumnWidth(180), // Dimensi
-        3: FixedColumnWidth(120), // Harga
-        4: FixedColumnWidth(90),  // Isi/Dus
+        3: FixedColumnWidth(90),  // Isi/Dus
       };
       final tabletWidths = <int, TableColumnWidth>{
         0: const FlexColumnWidth(1.1),
-        1: const FlexColumnWidth(1.6),
+        1: const FlexColumnWidth(1.8),
         2: const FlexColumnWidth(1.3),
-        3: const FlexColumnWidth(1.0),
-        4: const FlexColumnWidth(0.8),
+        3: const FlexColumnWidth(0.8),
       };
 
       final table = Table(
@@ -122,7 +120,6 @@ class PowerSupplyPage extends StatelessWidget {
             th('Input'),
             th('Output'),
             th('Dimensi'),
-            th('Harga'),
             th('Isi/Dus'),
           ]),
           for (final r in rows)
@@ -133,7 +130,6 @@ class PowerSupplyPage extends StatelessWidget {
                 td(r[1]),
                 td(r[2]),
                 td(r[3]),
-                td(r[4]),
               ],
             ),
         ],
@@ -150,8 +146,8 @@ class PowerSupplyPage extends StatelessWidget {
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: ConstrainedBox(
-                    // total ≈ 130+200+180+120+90 = 720
-                    constraints: const BoxConstraints(minWidth: 720),
+                    // total ≈ 130 + 220 + 180 + 90 = 620
+                    constraints: const BoxConstraints(minWidth: 620),
                     child: table,
                   ),
                 ),

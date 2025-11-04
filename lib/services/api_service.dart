@@ -195,55 +195,68 @@ class ApiService {
 
   /// Normalisasi alamat menjadi string manusiawi untuk semua bentuk payload
   /// Normalisasi alamat menjadi string manusiawi untuk semua bentuk payload
+// ...
 static String formatAddress(dynamic json) {
-  if (json == null) return '-';
+    // Bentuk object dengan key "alamat_detail"
+    if (json is Map &&
+        json['alamat_detail'] is List &&
+        (json['alamat_detail'] as List).isNotEmpty) {
+      final addr = json['alamat_detail'][0];
+      if (addr is Map) {
+        final detail = addr['detail_alamat']?.toString() ?? '';
+        final kel = addr['kelurahan']?['name']?.toString() ??
+            addr['kelurahan_name']?.toString() ??
+            '';
+        final kec = addr['kecamatan']?['name']?.toString() ??
+            addr['kecamatan_name']?.toString() ??
+            '';
+        final kota = addr['kota_kab']?['name']?.toString() ??
+            addr['kota_kab_name']?.toString() ??
+            '';
+        final prov = addr['provinsi']?['name']?.toString() ??
+            addr['provinsi_name']?.toString() ??
+            '';
+        final kodePos = addr['kode_pos']?.toString() ?? '';
+        final parts = [detail, kel, kec, kota, prov, kodePos]
+            .where((e) => e.trim().isNotEmpty && e.toLowerCase() != 'null')
+            .toList();
+        return parts.isEmpty ? '-' : parts.join(', ');
+      }
+    }
 
-  // 1) String langsung
-  if (json is String && json.trim().isNotEmpty) return json;
+    // Fallback langsung "address" array standar
+    if (json is List && json.isNotEmpty) {
+      final addr = json[0];
+      if (addr is Map) {
+        final detail = addr['detail_alamat']?.toString() ?? '';
+        final kel = addr['kelurahan']?['name']?.toString() ??
+            addr['kelurahan_name']?.toString() ??
+            '';
+        final kec = addr['kecamatan']?['name']?.toString() ??
+            addr['kecamatan_name']?.toString() ??
+            '';
+        final kota = addr['kota_kab']?['name']?.toString() ??
+            addr['kota_kab_name']?.toString() ??
+            '';
+        final prov = addr['provinsi']?['name']?.toString() ??
+            addr['provinsi_name']?.toString() ??
+            '';
+        final kodePos = addr['kode_pos']?.toString() ?? '';
+        final parts = [detail, kel, kec, kota, prov, kodePos]
+            .where((e) => e.trim().isNotEmpty && e.toLowerCase() != 'null')
+            .toList();
+        return parts.isEmpty ? '-' : parts.join(', ');
+      }
+    }
 
-  // 2) Object tunggal { detail_alamat, kelurahan{ name }, ... }
-  if (json is Map) {
-    final detail = json['detail_alamat']?.toString() ?? '';
-    final kel = (json['kelurahan'] is Map)
-        ? (json['kelurahan']['name'] ?? '')
-        : (json['kelurahan_name'] ?? json['kelurahan'] ?? '');
-    final kec = (json['kecamatan'] is Map)
-        ? (json['kecamatan']['name'] ?? '')
-        : (json['kecamatan_name'] ?? json['kecamatan'] ?? '');
-    final kota = (json['kota_kab'] is Map)
-        ? (json['kota_kab']['name'] ?? '')
-        : (json['kota_kab_name'] ?? json['kota_kab'] ?? '');
-    final prov = (json['provinsi'] is Map)
-        ? (json['provinsi']['name'] ?? '')
-        : (json['provinsi_name'] ?? json['provinsi'] ?? '');
-    final kode = json['kode_pos']?.toString() ?? '';
+    // String langsung
+    if (json is String && json.trim().isNotEmpty) {
+      return json;
+    }
 
-    final parts = [detail, kel, kec, kota, prov, kode]
-        .where((e) => e.toString().trim().isNotEmpty && e.toString() != 'null')
-        .toList();
-    if (parts.isNotEmpty) return parts.join(', ');
+    return '-';
   }
 
-  // 3) List berisi object [ { ... } ]
-  if (json is List && json.isNotEmpty) {
-    final first = json.first;
-    if (first is Map) return formatAddress(first);
-  }
-
-  // 4) Tersimpan di key lain
-  // 4) Tersimpan di key lain
-if (json is Map) {
-  final at = (json['address_text'] ?? '').toString().trim();
-  if (at.isNotEmpty && at.toLowerCase() != 'null') return at;
-
-  if (json['address_detail'] != null) return formatAddress(json['address_detail']);
-  if (json['alamat_detail']  != null) return formatAddress(json['alamat_detail']);
-  if (json['address']        != null) return formatAddress(json['address']);
-}
-
-
-  return '-';
-}
 
 
   // ====================== PARSER KHUSUS CUSTOMER ======================
@@ -1638,6 +1651,179 @@ if (json is Map) {
     print('DEBUG uploadWarrantyDelivery(UPDATE) => ${res.statusCode} ${res.body}');
     return res.statusCode >= 200 && res.statusCode < 300;
   }
+
+  static Future<List<OptionItem>> fetchPerbaikanCustomers({
+    int? departmentId,
+    int? employeeId,
+    int? categoryId,
+    String? q,
+  }) async {
+    // fleksibel: coba beberapa path
+    final headers = await _authorizedHeaders();
+    final tryUris = <Uri>[
+      _buildUri('orders', query: {
+        'type': 'customers',
+        if (departmentId != null) 'department_id': '$departmentId',
+        if (employeeId != null) 'employee_id': '$employeeId',
+        if (categoryId != null) 'customer_categories_id': '$categoryId',
+        if (q?.isNotEmpty == true) 'filter[search]': q!,
+        'per_page': '1000',
+      }),
+      _buildUri('customers', query: {
+        if (q?.isNotEmpty == true) 'filter[search]': q!,
+        'per_page': '1000',
+      }),
+    ];
+
+    for (final uri in tryUris) {
+      try {
+        final res = await http.get(uri, headers: headers);
+        if (res.statusCode != 200) continue;
+        final list = _extractList(_safeDecode(res.body));
+        if (list.isEmpty) continue;
+        return list.map<OptionItem>((m) => _parseCustomer(m)).toList();
+      } catch (_) {}
+    }
+    return <OptionItem>[];
+  }
+
+  static Future<List<PerbaikanData>> fetchPerbaikanData({
+    int page = 1,
+    int perPage = 50,
+    String? q,
+  }) async {
+    final headers = await _authorizedHeaders();
+    final paths = [
+      'perbaikan-datas',
+      'perbaikan_data',
+      'perbaikan-data',
+      'data-fixes',
+      'data_corrections',
+    ];
+
+    for (final p in paths) {
+      final uri = _buildUri(p, query: {
+        'page': '$page',
+        'per_page': '$perPage',
+        if (q?.isNotEmpty == true) 'filter[search]': q!,
+      });
+
+      try {
+        final res = await http.get(uri, headers: headers);
+        if (res.statusCode != 200) continue;
+        final items = _extractList(_safeDecode(res.body));
+        if (items.isEmpty) continue;
+        return items
+            .map((m) => PerbaikanData.fromJson(Map<String, dynamic>.from(m)))
+            .toList();
+      } catch (_) {}
+    }
+    return <PerbaikanData>[];
+  }
+
+  static Future<bool> createPerbaikanData({
+    required int departmentId,
+    required int employeeId,
+    required int customerId,
+    required int customerCategoryId,
+    required String pilihanData,
+    String? dataBaru,
+    // alamat sederhana (opsional)
+    String? provinsiCode,
+    String? kotaKabCode,
+    String? kecamatanCode,
+    String? kelurahanCode,
+    String? kodePos,
+    String? detailAlamat,
+    // nama wilayah (opsional)
+    String? provinsiName,
+    String? kotaKabName,
+    String? kecamatanName,
+    String? kelurahanName,
+    List<XFile>? photos,
+  }) async {
+    final headers = await _authorizedHeaders();
+    final tryUrls = <Uri>[
+      _buildUri('perbaikan-datas'),
+      _buildUri('perbaikan_data'),
+      _buildUri('perbaikan-data'),
+      _buildUri('data-fixes'),
+    ];
+
+    final req = http.MultipartRequest('POST', tryUrls.first);
+    req.headers.addAll(headers);
+
+    // field inti
+    req.fields['department_id'] = departmentId.toString();
+    req.fields['employee_id'] = employeeId.toString();
+    req.fields['customer_id'] = customerId.toString();
+    req.fields['customer_categories_id'] = customerCategoryId.toString();
+    req.fields['pilihan_data'] = pilihanData;
+    if (dataBaru != null && dataBaru.trim().isNotEmpty) {
+      req.fields['data_baru'] = dataBaru.trim();
+    }
+
+    // alamat (pakai format mirip createCustomer agar backend mudah baca)
+    if (detailAlamat != null ||
+        provinsiCode != null ||
+        kotaKabCode != null ||
+        kecamatanCode != null ||
+        kelurahanCode != null ||
+        kodePos != null) {
+      if (provinsiCode != null) req.fields['address[0][provinsi_code]'] = provinsiCode;
+      if (kotaKabCode != null) req.fields['address[0][kota_kab_code]'] = kotaKabCode;
+      if (kecamatanCode != null) req.fields['address[0][kecamatan_code]'] = kecamatanCode;
+      if (kelurahanCode != null) req.fields['address[0][kelurahan_code]'] = kelurahanCode;
+      if (kodePos != null) req.fields['address[0][kode_pos]'] = kodePos;
+      if (detailAlamat != null) req.fields['address[0][detail_alamat]'] = detailAlamat;
+
+      if (provinsiName != null) req.fields['address[0][provinsi_name]'] = provinsiName;
+      if (kotaKabName != null) req.fields['address[0][kota_kab_name]'] = kotaKabName;
+      if (kecamatanName != null) req.fields['address[0][kecamatan_name]'] = kecamatanName;
+      if (kelurahanName != null) req.fields['address[0][kelurahan_name]'] = kelurahanName;
+    }
+
+    // foto (boleh multi: kirim sebagai images[] | fallback image)
+    if (photos != null && photos.isNotEmpty) {
+      for (final x in photos) {
+        if (kIsWeb) {
+          final bytes = await x.readAsBytes();
+          req.files.add(http.MultipartFile.fromBytes('images[]', bytes, filename: x.name));
+        } else {
+          req.files.add(await http.MultipartFile.fromPath('images[]', x.path));
+        }
+      }
+      // kalau backend hanya terima single:
+      if (req.files.isEmpty) {
+        final f = photos.first;
+        if (kIsWeb) {
+          final b = await f.readAsBytes();
+          req.files.add(http.MultipartFile.fromBytes('image', b, filename: f.name));
+        } else {
+          req.files.add(await http.MultipartFile.fromPath('image', f.path));
+        }
+      }
+    }
+
+    // kirim; bila path pertama gagal, coba path lain
+    http.StreamedResponse st = await req.send();
+    http.Response res = await http.Response.fromStream(st);
+    if (res.statusCode >= 200 && res.statusCode < 300) return true;
+
+    for (int i = 1; i < tryUrls.length; i++) {
+      final alt = http.MultipartRequest('POST', tryUrls[i])
+        ..headers.addAll(req.headers)
+        ..fields.addAll(req.fields)
+        ..files.addAll(req.files);
+      final s = await alt.send();
+      final r = await http.Response.fromStream(s);
+      if (r.statusCode >= 200 && r.statusCode < 300) return true;
+    }
+    return false;
+  }
+
+  // expose absolute url util to models
+  static String absoluteUrl(String? s) => _absoluteUrl(s);
 
   // ---------- Utility ----------
   static String get _origin {

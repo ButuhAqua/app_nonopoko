@@ -1,13 +1,13 @@
 // lib/pages/home.dart
 import 'dart:async';
 
+import 'package:apps_nanolite/pages/perbaikandancustomer.dart';
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import 'categories_nano.dart';
 import 'categories_piko.dart';
 import 'create_sales_order.dart';
-import 'customer.dart';
 import 'garansi.dart';
 import 'profile.dart';
 import 'return.dart';
@@ -202,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         _buildBoxIcon(Icons.account_box, 'Customer', () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => CustomerScreen()),
+                            MaterialPageRoute(builder: (_) => PerbaikanDanCustomerScreen()),
                           );
                         }, isTablet),
                         _buildBoxIcon(Icons.shopping_cart, 'Sales Order', () {

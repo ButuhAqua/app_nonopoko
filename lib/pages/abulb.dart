@@ -159,37 +159,36 @@ class ABulbScreen extends StatelessWidget {
           ),
         );
 
-    // ===== Tabel A-Bulb: 7 kolom (2 warna) =====
+    // ===== Tabel A-Bulb: 6 kolom (tanpa Harga) =====
     Widget specTable() {
+      // Kolom: Varian Watt | Dimensi | Warna | Ket | Warna | Ket
       const rows = [
-        ['3 Watt','115mm x 60mm','Rp 12.900','3000K','Cahaya Putih Kekuningan','6500K','Cahaya Putih Kebiruan'],
-        ['5 Watt','115mm x 60mm','Rp 14.900','3000K','Cahaya Putih Kekuningan','6500K','Cahaya Putih Kebiruan'],
-        ['7 Watt','115mm x 55mm','Rp 16.900','3000K','Cahaya Putih Kekuningan','6500K','Cahaya Putih Kebiruan'],
-        ['9 Watt','125.5mm x 65mm','Rp 19.900','3000K','Cahaya Putih Kekuningan','6500K','Cahaya Putih Kebiruan'],
-        ['12 Watt','125.5mm x 65mm','Rp 22.900','3000K','Cahaya Putih Kekuningan','6500K','Cahaya Putih Kebiruan'],
-        ['15 Watt','137.5mm x 69.8mm','Rp 25.900','3000K','Cahaya Putih Kekuningan','6500K','Cahaya Putih Kebiruan'],
+        ['3 Watt','115mm x 60mm','3000K','Cahaya Putih Kekuningan','6500K','Cahaya Putih Kebiruan'],
+        ['5 Watt','115mm x 60mm','3000K','Cahaya Putih Kekuningan','6500K','Cahaya Putih Kebiruan'],
+        ['7 Watt','115mm x 55mm','3000K','Cahaya Putih Kekuningan','6500K','Cahaya Putih Kebiruan'],
+        ['9 Watt','125.5mm x 65mm','3000K','Cahaya Putih Kekuningan','6500K','Cahaya Putih Kebiruan'],
+        ['12 Watt','125.5mm x 65mm','3000K','Cahaya Putih Kekuningan','6500K','Cahaya Putih Kebiruan'],
+        ['15 Watt','137.5mm x 69.8mm','3000K','Cahaya Putih Kekuningan','6500K','Cahaya Putih Kebiruan'],
       ];
 
       const phoneWidths = <int, TableColumnWidth>{
-        0: FixedColumnWidth(120),
-        1: FixedColumnWidth(200),
-        2: FixedColumnWidth(140),
-        3: FixedColumnWidth(120),
-        4: FixedColumnWidth(220),
-        5: FixedColumnWidth(120),
-        6: FixedColumnWidth(220),
+        0: FixedColumnWidth(120), // Varian Watt
+        1: FixedColumnWidth(200), // Dimensi
+        2: FixedColumnWidth(120), // Warna 3000K
+        3: FixedColumnWidth(220), // Ket 3000K
+        4: FixedColumnWidth(120), // Warna 6500K
+        5: FixedColumnWidth(220), // Ket 6500K
       };
       final tabletWidths = <int, TableColumnWidth>{
         0: const FlexColumnWidth(1.1),
         1: const FlexColumnWidth(1.6),
-        2: const FlexColumnWidth(1.1),
-        3: const FlexColumnWidth(1.0),
-        4: const FlexColumnWidth(1.6),
-        5: const FlexColumnWidth(1.0),
-        6: const FlexColumnWidth(1.6),
+        2: const FlexColumnWidth(1.0),
+        3: const FlexColumnWidth(1.6),
+        4: const FlexColumnWidth(1.0),
+        5: const FlexColumnWidth(1.6),
       };
 
-      assert(rows.every((r) => r.length == 7), 'Semua row harus 7 kolom');
+      assert(rows.every((r) => r.length == 6), 'Semua row harus 6 kolom');
 
       final table = Table(
         columnWidths: isTablet ? tabletWidths : phoneWidths,
@@ -202,7 +201,6 @@ class ABulbScreen extends StatelessWidget {
           TableRow(children: [
             th('Varian Watt'),
             th('Dimensi Produk'),
-            th('Harga'),
             th('Warna'),
             th('Keterangan'),
             th('Warna'),
@@ -214,17 +212,15 @@ class ABulbScreen extends StatelessWidget {
               children: [
                 td(r[0]),
                 td(r[1]),
-                td(r[2]),
-                tdYellow(r[3]), // 3000K -> kuning
-                td(r[4]),
-                tdBlue(r[5]),   // 6500K -> biru
-                td(r[6]),
+                tdYellow(r[2]), // 3000K
+                td(r[3]),
+                tdBlue(r[4]),   // 6500K
+                td(r[5]),
               ],
             ),
         ],
       );
 
-      // panel tabel dibungkus ClipRRect agar sudut terlihat
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Container(
@@ -235,7 +231,8 @@ class ABulbScreen extends StatelessWidget {
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 1220),
+                    // 120+200+120+220+120+220 ≈ 1000
+                    constraints: const BoxConstraints(minWidth: 1040),
                     child: table,
                   ),
                 ),

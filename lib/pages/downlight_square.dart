@@ -155,41 +155,40 @@ class DownlightSquarePage extends StatelessWidget {
           ),
         );
 
+    // Tabel varian (tanpa kolom Harga)
     Widget specTable() {
-      // Watt | Lumen | Diameter | Harga | 3000K | Ket | 4000K | Ket | 6500K | Ket | Isi/Dus
+      // Watt | Lumen | Diameter | 3000K | Ket | 4000K | Ket | 6500K | Ket | Isi/Dus
       const rows = [
-        ['5 Watt', '600lm', '95mm', 'Rp 69.900', '3000K', 'Cahaya Putih Kekuningan', '4000K', 'Cahaya Natural', '6500K', 'Cahaya Putih Kebiruan', '100'],
-        ['9 Watt', '1080lm', '118mm', 'Rp 95.900', '3000K', 'Cahaya Putih Kekuningan', '4000K', 'Cahaya Natural', '6500K', 'Cahaya Putih Kebiruan', '100'],
-        ['12 Watt', '1440lm', '145mm', 'Rp 101.900', '3000K', 'Cahaya Putih Kekuningan', '4000K', 'Cahaya Natural', '6500K', 'Cahaya Putih Kebiruan', '60'],
-        ['15 Watt', '1800lm', '170mm', 'Rp 139.900', '3000K', 'Cahaya Putih Kekuningan', '4000K', 'Cahaya Natural', '6500K', 'Cahaya Putih Kebiruan', '60'],
-        ['18 Watt', '2160lm', '220mm', 'Rp 186.900', '3000K', 'Cahaya Putih Kekuningan', '4000K', 'Cahaya Natural', '6500K', 'Cahaya Putih Kebiruan', '40'],
+        ['5 Watt',  '600lm',  '95mm',  '3000K', 'Cahaya Putih Kekuningan', '4000K', 'Cahaya Natural', '6500K', 'Cahaya Putih Kebiruan', '100'],
+        ['9 Watt',  '1080lm', '118mm', '3000K', 'Cahaya Putih Kekuningan', '4000K', 'Cahaya Natural', '6500K', 'Cahaya Putih Kebiruan', '100'],
+        ['12 Watt', '1440lm', '145mm', '3000K', 'Cahaya Putih Kekuningan', '4000K', 'Cahaya Natural', '6500K', 'Cahaya Putih Kebiruan', '60'],
+        ['15 Watt', '1800lm', '170mm', '3000K', 'Cahaya Putih Kekuningan', '4000K', 'Cahaya Natural', '6500K', 'Cahaya Putih Kebiruan', '60'],
+        ['18 Watt', '2160lm', '220mm', '3000K', 'Cahaya Putih Kekuningan', '4000K', 'Cahaya Natural', '6500K', 'Cahaya Putih Kebiruan', '40'],
       ];
 
       const phoneWidths = <int, TableColumnWidth>{
-        0: FixedColumnWidth(120),
-        1: FixedColumnWidth(100),
-        2: FixedColumnWidth(110),
-        3: FixedColumnWidth(130),
-        4: FixedColumnWidth(100),
-        5: FixedColumnWidth(170),
-        6: FixedColumnWidth(100),
-        7: FixedColumnWidth(150),
-        8: FixedColumnWidth(100),
-        9: FixedColumnWidth(170),
-        10: FixedColumnWidth(90),
+        0: FixedColumnWidth(120), // Watt
+        1: FixedColumnWidth(100), // Lumen
+        2: FixedColumnWidth(110), // Diameter
+        3: FixedColumnWidth(100), // 3000K
+        4: FixedColumnWidth(170), // Ket 3000K
+        5: FixedColumnWidth(100), // 4000K
+        6: FixedColumnWidth(150), // Ket 4000K
+        7: FixedColumnWidth(100), // 6500K
+        8: FixedColumnWidth(170), // Ket 6500K
+        9: FixedColumnWidth(90),  // Isi/Dus
       };
       final tabletWidths = <int, TableColumnWidth>{
         0: const FlexColumnWidth(1.0),
         1: const FlexColumnWidth(0.9),
         2: const FlexColumnWidth(1.0),
-        3: const FlexColumnWidth(1.2),
-        4: const FlexColumnWidth(0.9),
-        5: const FlexColumnWidth(1.4),
-        6: const FlexColumnWidth(0.9),
-        7: const FlexColumnWidth(1.2),
-        8: const FlexColumnWidth(0.9),
-        9: const FlexColumnWidth(1.4),
-        10: const FlexColumnWidth(0.9),
+        3: const FlexColumnWidth(0.9),
+        4: const FlexColumnWidth(1.4),
+        5: const FlexColumnWidth(0.9),
+        6: const FlexColumnWidth(1.2),
+        7: const FlexColumnWidth(0.9),
+        8: const FlexColumnWidth(1.4),
+        9: const FlexColumnWidth(0.9),
       };
 
       final table = Table(
@@ -204,7 +203,6 @@ class DownlightSquarePage extends StatelessWidget {
             th('Watt'),
             th('Lumen'),
             th('Diameter'),
-            th('Harga'),
             th('Warna'),
             th('Keterangan'),
             th('Warna'),
@@ -217,11 +215,13 @@ class DownlightSquarePage extends StatelessWidget {
             TableRow(
               decoration: const BoxDecoration(color: bgPage),
               children: [
-                td(r[0]), td(r[1]), td(r[2]), td(r[3]),
-                tdYellow(r[4]), td(r[5]),
-                tdGrey(r[6]), td(r[7]),
-                tdBlue(r[8]), td(r[9]),
-                td(r[10]),
+                td(r[0]), // Watt
+                td(r[1]), // Lumen
+                td(r[2]), // Diameter
+                tdYellow(r[3]), td(r[4]), // 3000K
+                tdGrey(r[5]),   td(r[6]), // 4000K
+                tdBlue(r[7]),   td(r[8]), // 6500K
+                td(r[9]),                     // Isi/Dus
               ],
             ),
         ],
@@ -237,7 +237,8 @@ class DownlightSquarePage extends StatelessWidget {
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 1340),
+                    // sebelumnya 1340 (dengan Harga), cukup ~1200
+                    constraints: const BoxConstraints(minWidth: 1200),
                     child: table,
                   ),
                 ),

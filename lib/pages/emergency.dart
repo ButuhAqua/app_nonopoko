@@ -103,34 +103,32 @@ class EmergencyScreen extends StatelessWidget {
           ),
         );
 
-    // ===== Tabel varian (panel gelap rounded + scroll HP) =====
+    // ===== Tabel varian (tanpa kolom Harga) =====
     Widget emergencyTable() {
-      // Kolom: Varian Watt | Lumen | Tinggi | Diameter | Harga | Warna | Keterangan | Isi/Dus
+      // Kolom: Watt | Lumen | Tinggi | Diameter | Warna | Keterangan | Isi/Dus
       const rows = [
-        ['10 Watt', 'AC 1000lm / DC 700lm', '141 mm', '70 mm', 'Rp 104.900', '6500K', 'Cahaya Putih Kebiruan', '80'],
+        ['10 Watt', 'AC 1000lm / DC 700lm', '141 mm', '70 mm', '6500K', 'Cahaya Putih Kebiruan', '80'],
         // Tambah baris lain di sini jika perlu
       ];
 
       // Lebar kolom: fixed (HP) / flex (Tablet)
       const phoneWidths = <int, TableColumnWidth>{
-        0: FixedColumnWidth(120), // Varian Watt
+        0: FixedColumnWidth(120), // Watt
         1: FixedColumnWidth(200), // Lumen
         2: FixedColumnWidth(100), // Tinggi
         3: FixedColumnWidth(100), // Diameter
-        4: FixedColumnWidth(130), // Harga
-        5: FixedColumnWidth(90),  // Warna
-        6: FixedColumnWidth(220), // Keterangan
-        7: FixedColumnWidth(90),  // Isi/Dus
+        4: FixedColumnWidth(90),  // Warna
+        5: FixedColumnWidth(220), // Keterangan
+        6: FixedColumnWidth(90),  // Isi/Dus
       };
       final tabletWidths = <int, TableColumnWidth>{
         0: const FlexColumnWidth(1.1),
         1: const FlexColumnWidth(1.5),
         2: const FlexColumnWidth(1.0),
         3: const FlexColumnWidth(1.0),
-        4: const FlexColumnWidth(1.2),
-        5: const FlexColumnWidth(0.9),
-        6: const FlexColumnWidth(1.6),
-        7: const FlexColumnWidth(0.9),
+        4: const FlexColumnWidth(0.9),
+        5: const FlexColumnWidth(1.6),
+        6: const FlexColumnWidth(0.9),
       };
 
       final table = Table(
@@ -146,7 +144,6 @@ class EmergencyScreen extends StatelessWidget {
             th('Lumen'),
             th('Tinggi'),
             th('Diameter'),
-            th('Harga'),
             th('Warna'),
             th('Keterangan'),
             th('Isi/Dus'),
@@ -159,10 +156,9 @@ class EmergencyScreen extends StatelessWidget {
                 td(r[1]),
                 td(r[2]),
                 td(r[3]),
-                td(r[4]),
-                tdBlue(r[5]), // warna (biru)
+                tdBlue(r[4]), // Warna (biru)
+                td(r[5]),
                 td(r[6]),
-                td(r[7]),
               ],
             ),
         ],
@@ -178,7 +174,8 @@ class EmergencyScreen extends StatelessWidget {
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 1_050),
+                    // semula 1050 (ada kolom harga), sekarang cukup ~940
+                    constraints: const BoxConstraints(minWidth: 940),
                     child: table,
                   ),
                 ),

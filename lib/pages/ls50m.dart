@@ -156,45 +156,42 @@ class LightStrip50MPage extends StatelessWidget {
           ),
         );
 
-    // ===== TABEL VARIAN (7 kolom: persis Indoor) =====
+    // ===== TABEL VARIAN (tanpa kolom Harga) =====
     Widget specTable() {
-      // Kolom: Varian Watt | Lumen | Ukuran | Harga | Warna | Keterangan | Isi/Dus
+      // Kolom: Varian Watt | Lumen | Ukuran | Warna | Keterangan | Isi/Dus
       const rows = [
-        ['5 w/m',  '120 lm/watt', '50000mm × 12mm × 6mm', 'Rp 1.558.900', '3000K', 'Cahaya Putih Kekuningan', '1'],
-        ['5 w/m',  '120 lm/watt', '50000mm × 12mm × 6mm', 'Rp 1.558.900', '6500K', 'Cahaya Putih Kebiruan',  '1'],
+        ['5 w/m', '120 lm/watt', '50000mm × 12mm × 6mm', '3000K', 'Cahaya Putih Kekuningan', '1'],
+        ['5 w/m', '120 lm/watt', '50000mm × 12mm × 6mm', '6500K', 'Cahaya Putih Kebiruan',  '1'],
       ];
 
       const phoneWidths = <int, TableColumnWidth>{
         0: FixedColumnWidth(110), // Varian Watt
         1: FixedColumnWidth(120), // Lumen
         2: FixedColumnWidth(230), // Ukuran
-        3: FixedColumnWidth(130), // Harga
-        4: FixedColumnWidth(90),  // Warna
-        5: FixedColumnWidth(200), // Keterangan
-        6: FixedColumnWidth(90),  // Isi/Dus
+        3: FixedColumnWidth(90),  // Warna
+        4: FixedColumnWidth(200), // Keterangan
+        5: FixedColumnWidth(90),  // Isi/Dus
       };
       final tabletWidths = <int, TableColumnWidth>{
         0: const FlexColumnWidth(1.0),
         1: const FlexColumnWidth(1.0),
         2: const FlexColumnWidth(1.6),
-        3: const FlexColumnWidth(1.2),
-        4: const FlexColumnWidth(0.9),
-        5: const FlexColumnWidth(1.4),
-        6: const FlexColumnWidth(0.9),
+        3: const FlexColumnWidth(0.9),
+        4: const FlexColumnWidth(1.4),
+        5: const FlexColumnWidth(0.9),
       };
 
       TableRow dataRow(List<String> r) {
-        final isWarm = r[4] == '3000K';
+        final isWarm = r[3] == '3000K';
         return TableRow(
           decoration: const BoxDecoration(color: bgPage),
           children: [
             td(r[0]),
             td(r[1]),
             td(r[2]),
-            td(r[3]),
-            isWarm ? tdYellow(r[4]) : tdBlue(r[4]),
+            isWarm ? tdYellow(r[3]) : tdBlue(r[3]),
+            td(r[4]),
             td(r[5]),
-            td(r[6]),
           ],
         );
       }
@@ -211,7 +208,6 @@ class LightStrip50MPage extends StatelessWidget {
             th('Varian Watt'),
             th('Lumen'),
             th('Ukuran'),
-            th('Harga'),
             th('Warna'),
             th('Keterangan'),
             th('Isi/Dus'),
@@ -230,7 +226,8 @@ class LightStrip50MPage extends StatelessWidget {
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 970),
+                    // 110+120+230+90+200+90 ≈ 840
+                    constraints: const BoxConstraints(minWidth: 840),
                     child: table,
                   ),
                 ),

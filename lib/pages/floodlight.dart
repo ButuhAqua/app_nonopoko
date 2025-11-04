@@ -157,37 +157,35 @@ class FloodLightPage extends StatelessWidget {
           ),
         );
 
-    // ===== TABEL VARIAN — 9 kolom ala Bulb (dua warna dalam satu baris) =====
+    // ===== TABEL VARIAN — tanpa kolom Harga =====
     Widget specTable() {
-      // Kolom: Watt | Lumen | Ukuran | Harga | Warna | Keterangan | Warna | Keterangan | Isi/Dus
+      // Kolom: Watt | Lumen | Ukuran | Warna | Keterangan | Warna | Keterangan | Isi/Dus
       const rows = [
-        ['20 Watt',  '2.400 lm',  '104 × 120,4 × 22,8 mm', 'Rp 98.900',  '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan',  '20'],
-        ['50 Watt',  '6.000 lm',  '164,2 × 194,9 × 31,7 mm', 'Rp 205.900', '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan',  '20'],
-        ['100 Watt', '12.000 lm', '198,6 × 233,8 × 33 mm',   'Rp 305.900', '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan', '10'],
+        ['20 Watt',  '2.400 lm',  '104 × 120,4 × 22,8 mm', '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan',  '20'],
+        ['50 Watt',  '6.000 lm',  '164,2 × 194,9 × 31,7 mm', '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan',  '20'],
+        ['100 Watt', '12.000 lm', '198,6 × 233,8 × 33 mm',   '3000K', 'Cahaya Putih Kekuningan', '6500K', 'Cahaya Putih Kebiruan', '10'],
       ];
 
-      // Lebar kolom: fixed (HP) / flex (Tablet) — meniru Bulb
+      // Lebar kolom: fixed (HP) / flex (Tablet)
       const phoneWidths = <int, TableColumnWidth>{
         0: FixedColumnWidth(110), // Watt
         1: FixedColumnWidth(110), // Lumen
         2: FixedColumnWidth(230), // Ukuran
-        3: FixedColumnWidth(120), // Harga
-        4: FixedColumnWidth(90),  // Warna 1
-        5: FixedColumnWidth(180), // Ket 1
-        6: FixedColumnWidth(90),  // Warna 2
-        7: FixedColumnWidth(180), // Ket 2
-        8: FixedColumnWidth(90),  // Isi/Dus
+        3: FixedColumnWidth(90),  // Warna 1
+        4: FixedColumnWidth(180), // Ket 1
+        5: FixedColumnWidth(90),  // Warna 2
+        6: FixedColumnWidth(180), // Ket 2
+        7: FixedColumnWidth(90),  // Isi/Dus
       };
       final tabletWidths = <int, TableColumnWidth>{
         0: const FlexColumnWidth(1.0),
         1: const FlexColumnWidth(1.0),
         2: const FlexColumnWidth(1.6),
-        3: const FlexColumnWidth(1.1),
-        4: const FlexColumnWidth(0.9),
-        5: const FlexColumnWidth(1.4),
-        6: const FlexColumnWidth(0.9),
-        7: const FlexColumnWidth(1.4),
-        8: const FlexColumnWidth(0.9),
+        3: const FlexColumnWidth(0.9),
+        4: const FlexColumnWidth(1.4),
+        5: const FlexColumnWidth(0.9),
+        6: const FlexColumnWidth(1.4),
+        7: const FlexColumnWidth(0.9),
       };
 
       Widget badge(String temp) => temp == '3000K' ? tdYellow(temp) : tdBlue(temp);
@@ -204,7 +202,6 @@ class FloodLightPage extends StatelessWidget {
             th('Watt'),
             th('Lumen'),
             th('Ukuran'),
-            th('Harga'),
             th('Warna'),
             th('Keterangan'),
             th('Warna'),
@@ -218,12 +215,11 @@ class FloodLightPage extends StatelessWidget {
                 td(r[0]),
                 td(r[1]),
                 td(r[2]),
-                td(r[3]),
-                badge(r[4]),
-                td(r[5]),
-                badge(r[6]),
+                badge(r[3]),
+                td(r[4]),
+                badge(r[5]),
+                td(r[6]),
                 td(r[7]),
-                td(r[8]),
               ],
             ),
         ],
@@ -239,8 +235,8 @@ class FloodLightPage extends StatelessWidget {
               : SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: ConstrainedBox(
-                    // 110+110+230+120+90+180+90+180+90 ≈ 1.200
-                    constraints: const BoxConstraints(minWidth: 1200),
+                    // 110+110+230+90+180+90+180+90 ≈ 1.080
+                    constraints: const BoxConstraints(minWidth: 1080),
                     child: table,
                   ),
                 ),
