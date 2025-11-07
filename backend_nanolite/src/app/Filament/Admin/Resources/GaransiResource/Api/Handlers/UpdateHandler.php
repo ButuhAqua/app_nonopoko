@@ -114,8 +114,10 @@ class UpdateHandler extends Handlers
         // response dengan URL absolut
         $data = $garansi->toArray();
         $imgs = (array) ($garansi->delivery_images ?? []);
-        $data['delivery_images']    = array_map(fn ($p) => Storage::disk('public')->url($p), $imgs);
-        $data['delivery_image_url'] = $imgs[0] ?? null ? Storage::disk('public')->url($imgs[0]) : null;
+        $data['delivery_images']      = array_map(fn ($p) => Storage::disk('public')->url($p), $imgs);
+        $data['delivery_images_urls'] = $data['delivery_images']; // konsistensi dengan transformer
+        $data['delivery_image_url']   = $imgs[0] ?? null ? Storage::disk('public')->url($imgs[0]) : null;
+
 
         return response()->json([
             'message' => 'Successfully Update Resource',

@@ -142,6 +142,44 @@ class GaransiRow {
     }).join('\n');
   }
 
+  String get statusPengajuanLabel {
+    switch (statusPengajuanRaw.toLowerCase()) {
+      case 'approved': return 'Disetujui';
+      case 'rejected': return 'Ditolak';
+      case 'pending':
+      default:         return 'Pending';
+    }
+  }
+
+  int get statusPengajuanColorHex {
+    switch (statusPengajuanRaw.toLowerCase()) {
+      case 'approved': return 0xFF2E7D32; // green
+      case 'rejected': return 0xFFD32F2F; // red
+      case 'pending':
+      default:         return 0xFFFFA000; // amber
+    }
+  }
+
+  String get statusProdukLabel {
+    switch (statusProductRaw.toLowerCase()) {
+      case 'ready_stock': return 'Ready Stock';
+      case 'sold_out':    return 'Sold Out';
+      case 'rejected':    return 'Ditolak';
+      case 'pending':
+      default:            return 'Pending';
+    }
+  }
+
+  int get statusProdukColorHex {
+    switch (statusProductRaw.toLowerCase()) {
+      case 'ready_stock': return 0xFF2E7D32; // green
+      case 'sold_out':
+      case 'rejected':    return 0xFFD32F2F; // red
+      case 'pending':
+      default:            return 0xFFFFA000; // amber
+    }
+  }
+
   String get statusGaransi => statusGaransiRaw;
 
   bool get canUploadDelivery {
@@ -151,9 +189,8 @@ class GaransiRow {
     return a == 'approved' && b == 'ready_stock' && c == 'delivered';
   }
 
-  String get statusDisplay {
-    final v = statusGaransiRaw.toLowerCase();
-    switch (v) {
+  String get statusGaransiLabel {
+    switch (statusGaransiRaw.toLowerCase()) {
       case 'confirmed':  return 'Confirmed';
       case 'processing': return 'Processing';
       case 'on_hold':    return 'On Hold';
@@ -163,22 +200,21 @@ class GaransiRow {
       case 'rejected':   return 'Ditolak';
       case 'pending':
       default:
-        if (statusPengajuanRaw.toLowerCase() == 'rejected') return 'Ditolak';
-        return 'Pending';
+        return (statusPengajuanRaw.toLowerCase() == 'rejected') ? 'Ditolak' : 'Pending';
     }
   }
 
-  int get statusColorHex {
-    switch (statusDisplay) {
+  int get statusGaransiColorHex {
+    switch (statusGaransiLabel) {
       case 'Delivered':
       case 'Processing':
-      case 'Confirmed': return 0xFF1976D2;
-      case 'Completed': return 0xFF2E7D32;
+      case 'Confirmed': return 0xFF1976D2; // blue (info)
+      case 'Completed': return 0xFF2E7D32; // green
       case 'On Hold':
-      case 'Pending':  return 0xFFFFA000;
+      case 'Pending':  return 0xFFFFA000; // amber
       case 'Ditolak':
-      case 'Cancelled': return 0xFFD32F2F;
-      default: return 0xFF607D8B;
+      case 'Cancelled': return 0xFFD32F2F; // red
+      default: return 0xFF607D8B; // default grey
     }
   }
 
@@ -193,10 +229,21 @@ class GaransiRow {
       if (c != '-') return c;
       return '-';
     }();
+  
+  // 1) kalau backend/ApiService sudah kirim string siap tampil, pakai itu
+  final address = () {
+    final disp = '${j['address_display'] ?? ''}'.trim();
+    if (disp.isNotEmpty && disp != '-') return disp;
 
-  final address = ApiService.formatAddress(
-  j['address'] ?? j['address_detail'] ?? j
-);
+    // 2) kalau ada address_text dari transformer backend, pakai
+    final txt = '${j['address_text'] ?? ''}'.trim();
+    if (txt.isNotEmpty && txt != '-') return txt;
+
+    // 3) fallback: format dari detail/raw
+    return ApiService.formatAddress(
+      j['address_detail'] ?? j['address'] ?? j,
+    );
+  }();
 
 
 

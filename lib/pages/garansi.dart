@@ -42,7 +42,10 @@ class _GaransiScreenState extends State<GaransiScreen> {
         g.reason,
         g.notes,
         g.productDetail,
-        g.statusDisplay,
+        // ikutkan label status biar bisa di-search
+        g.statusPengajuanLabel,
+        g.statusProdukLabel,
+        g.statusGaransiLabel,
         g.createdAt,
         g.updatedAt,
       ].join(' ').toLowerCase();
@@ -88,9 +91,9 @@ class _GaransiScreenState extends State<GaransiScreen> {
     await downloadFile(url, fileName: fname);
   }
 
-  Widget _statusChipGaransi(GaransiRow g) {
-    final label = g.statusDisplay;
-    final bg = Color(g.statusColorHex).withOpacity(0.18);
+  // chip status generik
+  Widget _statusChip(String label, int colorHex) {
+    final bg = Color(colorHex).withOpacity(0.18);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -318,7 +321,7 @@ class _GaransiScreenState extends State<GaransiScreen> {
             child: Text(
               (v.isEmpty || v == 'null') ? '-' : v,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13),
+              style: const TextStyle(fontSize: 13, color: Colors.white),
             ),
           ),
         );
@@ -360,13 +363,15 @@ class _GaransiScreenState extends State<GaransiScreen> {
           DataColumn(label: Text('Foto Barang')),
           DataColumn(label: Text('Bukti Pengiriman')),
           DataColumn(label: Text('Dokumen')),
-          DataColumn(label: Text('Status')),
+          // ——— tiga kolom status
+          DataColumn(label: Text('Status Pengajuan')),
+          DataColumn(label: Text('Status Produk')),
+          DataColumn(label: Text('Status Garansi')),
           DataColumn(label: Text('Tanggal Dibuat')),
           DataColumn(label: Text('Tanggal Diperbarui')),
           DataColumn(label: Text('Aksi')),
         ],
         rows: _filtered.map((g) {
-          // pakai label tampilan (konsisten dengan badge)
           final hasDelivery = (g.deliveryImageUrl != null && g.deliveryImageUrl!.isNotEmpty);
 
           return DataRow(cells: [
@@ -382,7 +387,7 @@ class _GaransiScreenState extends State<GaransiScreen> {
             _textCell(g.reason, width: 180),
             _textCell(g.notes, width: 160),
 
-            // Detail produk
+            // Detail produk multi-baris sebagai bullet
             DataCell(
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,7 +410,7 @@ class _GaransiScreenState extends State<GaransiScreen> {
             // Foto Barang
             DataCell(
               (g.imageUrl == null || g.imageUrl!.isEmpty)
-                  ? const Text('-')
+                  ? const Text('-', style: TextStyle(color: Colors.white))
                   : ClickableThumb(
                       url: g.imageUrl!,
                       heroTag: 'garansi_barang_${g.garansiNo}_${g.createdAt}',
@@ -416,12 +421,12 @@ class _GaransiScreenState extends State<GaransiScreen> {
             // Bukti Pengiriman
             DataCell(
               hasDelivery
-                ? ClickableThumb(
-                    url: g.deliveryImageUrl!,
-                    heroTag: 'garansi_delivery_${g.garansiNo}_${g.updatedAt}',
-                    size: 36,
-                  )
-                : const Text('-'),
+                  ? ClickableThumb(
+                      url: g.deliveryImageUrl!,
+                      heroTag: 'garansi_delivery_${g.garansiNo}_${g.updatedAt}',
+                      size: 36,
+                    )
+                  : const Text('-', style: TextStyle(color: Colors.white)),
             ),
 
             // PDF
@@ -432,13 +437,18 @@ class _GaransiScreenState extends State<GaransiScreen> {
                       icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
                       onPressed: () => _downloadPdf(g.pdfUrl, g.garansiNo),
                     )
-                  : const Text('-'),
+                  : const Text('-', style: TextStyle(color: Colors.white)),
             ),
 
-            DataCell(_statusChipGaransi(g)),
+            // ——— Status Pengajuan / Produk / Garansi
+            DataCell(_statusChip(g.statusPengajuanLabel, g.statusPengajuanColorHex)),
+            DataCell(_statusChip(g.statusProdukLabel, g.statusProdukColorHex)),
+            DataCell(_statusChip(g.statusGaransiLabel, g.statusGaransiColorHex)),
+
             _textCell(g.createdAt, width: 120),
             _textCell(g.updatedAt, width: 120),
 
+            // ——— Aksi
             DataCell(
               g.canUploadDelivery
                   ? ElevatedButton.icon(
@@ -462,7 +472,7 @@ class _GaransiScreenState extends State<GaransiScreen> {
                         if (ok == true) _fetch();
                       },
                     )
-                  : const Text('-'),
+                  : const Text('-', style: TextStyle(color: Colors.white)),
             ),
           ]);
         }).toList(),

@@ -62,6 +62,8 @@ class GaransiTransformer extends JsonResource
 
             // 🔧 sebelumnya: 'image' => Storage::url($this->image)
             'image'             => $imageUrl,
+            'delivery_image_url'   => $this->delivery_image_url,    // URL bukti pertama (absolute)
+            'delivery_images_urls' => $this->delivery_images_urls,  // semua URL bukti (absolute array)
 
             // Jika tabel di Flutter butuh string “products_details”, sediakan versi join-an juga
             'products'          => $productsReadable,
@@ -93,15 +95,18 @@ class GaransiTransformer extends JsonResource
     {
         if (empty($items)) return null;
         return collect($items)->map(function ($a) {
+            $name = fn($objOrStr) => is_array($objOrStr) ? ($objOrStr['name'] ?? null) : (is_string($objOrStr) ? $objOrStr : null);
             $parts = [
                 $a['detail_alamat'] ?? null,
-                $a['kelurahan']['name'] ?? null,
-                $a['kecamatan']['name'] ?? null,
-                $a['kota_kab']['name'] ?? null,
-                $a['provinsi']['name'] ?? null,
+                $name($a['kelurahan'] ?? null),
+                $name($a['kecamatan'] ?? null),
+                $name($a['kota_kab'] ?? null),
+                $name($a['provinsi'] ?? null),
                 $a['kode_pos'] ?? null,
             ];
-            return implode(', ', array_filter($parts));
+            // buang null, '', '-', 'null'
+            $parts = array_values(array_filter($parts, fn($v) => ($t = trim((string)$v)) !== '' && $t !== '-' && strtolower($t) !== 'null'));
+            return implode(', ', $parts);
         })->join(' | ');
     }
 
@@ -110,18 +115,43 @@ class GaransiTransformer extends JsonResource
         $items = is_array($address) ? $address : json_decode($address ?? '[]', true);
         if (!is_array($items)) $items = [];
 
-        return array_map(function ($a) {
-            $provCode = $a['provinsi']  ?? null;
-            $kabCode  = $a['kota_kab']  ?? null;
-            $kecCode  = $a['kecamatan'] ?? null;
-            $kelCode  = $a['kelurahan'] ?? null;
+        $getCode = function(array $a, string $key) {
+            // dukung: key_code, nested[key][code], legacy key (bisa code atau name)
+            if (!empty($a["{$key}_code"])) return (string)$a["{$key}_code"];
+            if (!empty($a[$key]['code']))  return (string)$a[$key]['code'];
+            if (!empty($a[$key]) && is_string($a[$key])) {
+                // heuristik: kalau string 2–10 char alfanumerik semua → anggap code
+                $v = (string)$a[$key];
+                return preg_match('/^[A-Za-z0-9._-]{2,10}$/', $v) ? $v : null;
+            }
+            return null;
+        };
+
+        $getName = function(array $a, string $key, ?string $code, string $model) {
+            // urutan prioritas: flat *_name → nested[name] → lookup by code → legacy string
+            if (!empty($a["{$key}_name"])) return (string)$a["{$key}_name"];
+            if (!empty($a[$key]['name']))  return (string)$a[$key]['name'];
+            if ($code) return $this->nameFromCode($model, $code);
+            if (!empty($a[$key]) && is_string($a[$key])) {
+                // kalau legacy string bukan code (heuristik gagal), pakai sebagai name
+                $v = (string)$a[$key];
+                if (!preg_match('/^[A-Za-z0-9._-]{2,10}$/', $v)) return $v;
+            }
+            return null;
+        };
+
+        return array_map(function ($a) use ($getCode, $getName) {
+            $provCode = $getCode($a, 'provinsi');
+            $kabCode  = $getCode($a, 'kota_kab');
+            $kecCode  = $getCode($a, 'kecamatan');
+            $kelCode  = $getCode($a, 'kelurahan');
 
             return [
                 'detail_alamat' => $a['detail_alamat'] ?? null,
-                'provinsi'      => ['code' => $provCode, 'name' => $this->nameFromCode(Provinsi::class,  $provCode)],
-                'kota_kab'      => ['code' => $kabCode,  'name' => $this->nameFromCode(Kabupaten::class, $kabCode)],
-                'kecamatan'     => ['code' => $kecCode,  'name' => $this->nameFromCode(Kecamatan::class, $kecCode)],
-                'kelurahan'     => ['code' => $kelCode,  'name' => $this->nameFromCode(Kelurahan::class, $kelCode)],
+                'provinsi'      => ['code' => $provCode, 'name' => $getName($a, 'provinsi',  $provCode,  \Laravolt\Indonesia\Models\Provinsi::class)],
+                'kota_kab'      => ['code' => $kabCode,  'name' => $getName($a, 'kota_kab',  $kabCode,   \Laravolt\Indonesia\Models\Kabupaten::class)],
+                'kecamatan'     => ['code' => $kecCode,  'name' => $getName($a, 'kecamatan', $kecCode,   \Laravolt\Indonesia\Models\Kecamatan::class)],
+                'kelurahan'     => ['code' => $kelCode,  'name' => $getName($a, 'kelurahan', $kelCode,   \Laravolt\Indonesia\Models\Kelurahan::class)],
                 'kode_pos'      => $a['kode_pos'] ?? $this->postalByVillage($kelCode),
             ];
         }, $items);

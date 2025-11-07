@@ -1634,6 +1634,18 @@ static String formatAddress(dynamic json) {
           // Set single absolute url supaya selalu ada yang dipakai UI
           map['delivery_image_url'] = _absoluteUrl(delivery);
 
+          final addrText   = (map['address_text'] ?? '').toString().trim();
+          final addrDetail = map['address_detail']; // array terstruktur (opsional)
+          final rawAddr    = map['address'];        // bisa array / string JSON / string mentah
+
+          // gunakan address_text bila ada; kalau tidak, format dari detail/raw
+          String displayAddr = addrText;
+          if (displayAddr.isEmpty) {
+            displayAddr = ApiService.formatAddress(addrDetail ?? rawAddr);
+            if (displayAddr.isEmpty) displayAddr = '-';
+          }
+          map['address_display'] = displayAddr;
+
           return GaransiRow.fromJson(map);
         }).toList();
       }
@@ -1665,6 +1677,15 @@ static String formatAddress(dynamic json) {
                   '')
               .toString());
       map['image'] = _absoluteUrl((map['image'] ?? map['image_url'] ?? '').toString());
+
+      final addrText   = (map['address_text'] ?? '').toString().trim();
+      final addrDetail = map['address_detail'];
+      final rawAddr    = map['address'];
+      String displayAddr = addrText.isNotEmpty
+          ? addrText
+          : ApiService.formatAddress(addrDetail ?? rawAddr);
+      map['address_display'] = (displayAddr.isNotEmpty ? displayAddr : '-');
+
       return GaransiRow.fromJson(map);
     }
     throw Exception('GET /garansis/$id not found');

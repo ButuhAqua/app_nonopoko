@@ -89,10 +89,10 @@ class OrderRow {
   static String _joinProducts(List prods) {
     if (prods.isEmpty) return '-';
     return prods.map((p) {
-      final brand = _s(p['brand']);
-      final cat   = _s(p['category']);
-      final prod  = _s(p['product']);
-      final col   = _s(p['color']);
+      final brand = _s(p['brand'] ?? p['brand_name']);
+      final cat   = _s(p['category'] ?? p['category_name']);
+      final prod  = _s(p['product'] ?? p['product_name']);
+      final col   = _s(p['color'] ?? p['warna_id']);
       final qty   = p['quantity'] ?? 0;
       final price = p['price'] ?? 0;
       return '$brand-$cat-$prod-$col-Rp$price-Qty:$qty';
