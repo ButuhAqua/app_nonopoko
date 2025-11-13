@@ -1537,120 +1537,123 @@ static String formatAddress(dynamic json) {
       if (imagePath != null && imagePath.isNotEmpty) 'image': [imagePath], // kirim sebagai array
     };
 
+    print('DEBUG payload warranty => $payload'); // <-- tambahin ini
+
     final res = await http.post(url, headers: headers, body: jsonEncode(payload));
     // ignore: avoid_print
     print('DEBUG createWarranty => ${res.statusCode} ${res.body}');
     return res.statusCode == 200 || res.statusCode == 201;
   }
 
-  static Future<List<GaransiRow>> fetchWarrantyRows(
-    {int page = 1, int perPage = 20, String? q, String? status}) async {
-      final headers = await _authorizedHeaders();
-      final paths = ['garansis', 'warranties', 'garansi', 'warranty-claims', 'warranty_claims'];
+  static Future<List<GaransiRow>> fetchWarrantyRows({
+    int page = 1,
+    int perPage = 20,
+    String? q,
+    String? status,
+  }) async {
+    final headers = await _authorizedHeaders();
 
-      for (final p in paths) {
-        final params = {
-          'page': '$page',
-          'per_page': '$perPage',
-          if (q?.isNotEmpty == true) 'filter[search]': q!,
-          if (status?.isNotEmpty == true) 'filter[status]': status!,
-        };
-        final uri = _buildUri(p, query: params);
-        final res = await http.get(uri, headers: headers);
-        if (res.statusCode != 200) continue;
-        
-        final items = _extractList(_safeDecode(res.body));
-        if (items.isEmpty) continue;
-        if (items.isNotEmpty) {
-          final sample = Map<String, dynamic>.from(items.first);
-          debugPrint('GARANSI SAMPLE KEYS: ${sample.keys.toList()}');
-          debugPrint('GARANSI DELIVERY candidates: '
-              'proof_url=${sample['delivery_proof_url']} | '
-              'image_url=${sample['delivery_image_url']} | '
-              'image=${sample['delivery_image']} | '
-              'bukti_url=${sample['bukti_pengiriman_url']} | '
-              'bukti=${sample['bukti_pengiriman']} | '
-              'images=${sample['delivery_images']} | '
-              'images_urls=${sample['delivery_images_urls']}');
-        }
-        return items.map((raw) {
-          final map = Map<String, dynamic>.from(raw);
+    final params = {
+      'page': '$page',
+      'per_page': '$perPage',
+      if (q?.isNotEmpty == true) 'filter[search]': q!,
+      if (status?.isNotEmpty == true) 'filter[status]': status!,
+    };
 
-          // PDF absolut
-          map['file_pdf_url'] = _absoluteUrl(
-            (map['file_pdf_url'] ??
-            map['pdf_url'] ??
-            map['document_url'] ??
-            map['invoice_pdf_url'] ??
-            '').toString(),
-          );
+    // endpoint yang BENAR cuma "garansis"
+    final uri = _buildUri('garansis', query: params);
+    final res = await http.get(uri, headers: headers);
 
-          // Foto barang absolut (single)
-          map['image'] = _absoluteUrl((map['image'] ?? map['image_url'] ?? '').toString());
-
-          // ---------- BUKTI PENGIRIMAN ----------
-          String delivery = (map['delivery_proof_url'] ??
-                            map['delivery_image_url'] ??
-                            map['delivery_image'] ??
-                            map['bukti_pengiriman_url'] ??
-                            map['bukti_pengiriman'] ??
-                            map['delivery_images_url'] ?? // <- tambah ini kalau ada
-                            map['delivery_photo'] ??      // <- atau ini
-                            '')
-                .toString();
-
-          // A) kalau sudah ada accessor array full URL dari backend, biarkan lewat
-          // (map tetap menyimpan 'delivery_images_urls' bila ada)
-
-          // B) delivery_images = List path/url
-          if (delivery.isEmpty && map['delivery_images'] is List && (map['delivery_images'] as List).isNotEmpty) {
-            final list = (map['delivery_images'] as List).map((e) => e.toString()).toList();
-            delivery = list.first;
-            // sekaligus bikin array full URL biar dipakai model
-            map['delivery_images_urls'] = list.map((e) => _absoluteUrl(e)).toList();
-          }
-
-          // C) delivery_images = String JSON atau single path string
-          if (delivery.isEmpty && map['delivery_images'] is String) {
-            final s = (map['delivery_images'] as String).trim();
-            if (s.isNotEmpty) {
-              try {
-                final decoded = jsonDecode(s);
-                if (decoded is List && decoded.isNotEmpty) {
-                  final list = decoded.map((e) => e.toString()).toList();
-                  delivery = list.first;
-                  map['delivery_images_urls'] = list.map((e) => _absoluteUrl(e)).toList();
-                } else {
-                  // single path string
-                  delivery = s;
-                }
-              } catch (_) {
-                // bukan JSON, anggap single path string
-                delivery = s;
-              }
-            }
-          }
-
-          // Set single absolute url supaya selalu ada yang dipakai UI
-          map['delivery_image_url'] = _absoluteUrl(delivery);
-
-          final addrText   = (map['address_text'] ?? '').toString().trim();
-          final addrDetail = map['address_detail']; // array terstruktur (opsional)
-          final rawAddr    = map['address'];        // bisa array / string JSON / string mentah
-
-          // gunakan address_text bila ada; kalau tidak, format dari detail/raw
-          String displayAddr = addrText;
-          if (displayAddr.isEmpty) {
-            displayAddr = ApiService.formatAddress(addrDetail ?? rawAddr);
-            if (displayAddr.isEmpty) displayAddr = '-';
-          }
-          map['address_display'] = displayAddr;
-
-          return GaransiRow.fromJson(map);
-        }).toList();
-      }
+    if (res.statusCode != 200) {
+      debugPrint('fetchWarrantyRows ERROR ${res.statusCode}: ${res.body}');
       return <GaransiRow>[];
     }
+
+    final items = _extractList(_safeDecode(res.body));
+    if (items.isEmpty) return <GaransiRow>[];
+
+    // optional: logging sample
+    final sample = Map<String, dynamic>.from(items.first);
+    debugPrint('GARANSI SAMPLE KEYS: ${sample.keys.toList()}');
+
+    return items.map((raw) {
+      final map = Map<String, dynamic>.from(raw);
+
+      // PDF absolut
+      map['file_pdf_url'] = _absoluteUrl(
+        (map['file_pdf_url'] ??
+                map['pdf_url'] ??
+                map['document_url'] ??
+                map['invoice_pdf_url'] ??
+                '')
+            .toString(),
+      );
+
+      // foto barang absolut
+      map['image'] =
+          _absoluteUrl((map['image'] ?? map['image_url'] ?? '').toString());
+
+      // --------- BUKTI PENGIRIMAN ----------
+      String delivery = (map['delivery_proof_url'] ??
+              map['delivery_image_url'] ??
+              map['delivery_image'] ??
+              map['bukti_pengiriman_url'] ??
+              map['bukti_pengiriman'] ??
+              map['delivery_images_url'] ??
+              map['delivery_photo'] ??
+              '')
+          .toString();
+
+      // B) delivery_images = List
+      if (delivery.isEmpty &&
+          map['delivery_images'] is List &&
+          (map['delivery_images'] as List).isNotEmpty) {
+        final list =
+            (map['delivery_images'] as List).map((e) => e.toString()).toList();
+        delivery = list.first;
+        map['delivery_images_urls'] =
+            list.map((e) => _absoluteUrl(e)).toList(); // full URL array
+      }
+
+      // C) delivery_images = String (JSON / single)
+      if (delivery.isEmpty && map['delivery_images'] is String) {
+        final s = (map['delivery_images'] as String).trim();
+        if (s.isNotEmpty) {
+          try {
+            final decoded = jsonDecode(s);
+            if (decoded is List && decoded.isNotEmpty) {
+              final list = decoded.map((e) => e.toString()).toList();
+              delivery = list.first;
+              map['delivery_images_urls'] =
+                  list.map((e) => _absoluteUrl(e)).toList();
+            } else {
+              delivery = s;
+            }
+          } catch (_) {
+            delivery = s;
+          }
+        }
+      }
+
+      // single absolute url untuk dipakai UI
+      map['delivery_image_url'] = _absoluteUrl(delivery);
+
+      // --------- ALAMAT DISPLAY ----------
+      final addrText = (map['address_text'] ?? '').toString().trim();
+      final addrDetail = map['address_detail'];
+      final rawAddr = map['address'];
+
+      String displayAddr = addrText;
+      if (displayAddr.isEmpty) {
+        displayAddr = ApiService.formatAddress(addrDetail ?? rawAddr);
+        if (displayAddr.isEmpty) displayAddr = '-';
+      }
+      map['address_display'] = displayAddr;
+
+      return GaransiRow.fromJson(map);
+    }).toList();
+  }
+
 
 
   static Future<GaransiRow> fetchWarrantyRowDetail(int id) async {

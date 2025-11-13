@@ -162,28 +162,12 @@ class GaransiResource extends Resource
 
                 TextInput::make('phone')->label('Phone')->reactive()->required() ->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital'])),    
 
-                Textarea::make('address')
+                TextColumn::make('address_text')
                     ->label('Alamat')
-                    ->rows(3)
-                    ->required()
-                    ->formatStateUsing(function ($state) {
-                        if (is_array($state)) {
-                            return collect($state)->map(function ($i) {
-                                return implode(', ', array_filter([
-                                    $i['detail_alamat'] ?? null,
-                                    $i['kelurahan'] ?? null,
-                                    $i['kecamatan'] ?? null,
-                                    $i['kota_kab'] ?? null,
-                                    $i['provinsi'] ?? null,
-                                    $i['kode_pos'] ?? null,
-                                ], fn ($v) => !empty($v) && $v !== '-'));
-                            })->implode("\n");
-                        }
-                        return $state;
-                    })
-                    ->dehydrateStateUsing(fn ($state) => $state)
-                    ->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital'])),    
-
+                    ->getStateUsing(fn (\App\Models\Garansi $record) => $record->address_text ?? '-')
+                    ->default('-')
+                    ->wrap()
+                    ->sortable(),
 
                 DatePicker::make('purchase_date')->label('Tanggal Pembelian')->required()->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital'])),    
                 DatePicker::make('claim_date')->label('Tanggal Klaim Garansi')->required()->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital'])),    
@@ -374,8 +358,31 @@ class GaransiResource extends Resource
                 TextColumn::make('address')
                     ->label('Alamat')
                     ->wrap()
-                    ->tooltip(fn ($record) => $record->address_text) // opsional
-                    ->sortable(),
+                    ->formatStateUsing(function ($state) {
+                        if (is_string($state)) {
+                            $decoded = json_decode($state, true);
+                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                $state = $decoded;
+                            }
+                        }
+
+                        if (is_array($state)) {
+                            $i = $state[0] ?? [];
+                            $kel = $i['kelurahan']['name'] ?? $i['kelurahan_name'] ?? $i['kelurahan'] ?? null;
+                            $kec = $i['kecamatan']['name'] ?? $i['kecamatan_name'] ?? $i['kecamatan'] ?? null;
+                            $kab = $i['kota_kab']['name'] ?? $i['kota_kab_name'] ?? $i['kota_kab'] ?? null;
+                            $prov = $i['provinsi']['name'] ?? $i['provinsi_name'] ?? $i['provinsi'] ?? null;
+
+                            return implode(', ', array_filter([
+                                $i['detail_alamat'] ?? null,
+                                $kel, $kec, $kab, $prov,
+                                $i['kode_pos'] ?? null,
+                            ], fn ($v) => filled($v) && $v !== '-'));
+                        }
+
+                        return (string) $state;
+                    }),
+
                 TextColumn::make('products_details')->label('Detail Produk')->html()->sortable(),
                 TextColumn::make('purchase_date')->label('Tanggal Pembelian')->date()->sortable(),
                 TextColumn::make('claim_date')->label('Tanggal Klaim')->date()->sortable(),

@@ -29,10 +29,18 @@ class GaransiTransformer extends JsonResource
             default    => ucfirst((string) $this->status),
         };
 
-        $alamatReadable   = $this->mapAddressesReadable($this->address);
+        // ---------- ALAMAT ----------
+        $alamatReadable = $this->mapAddressesReadable($this->address);
+        $addressText    = $this->buildAddressText($alamatReadable);
+
+        if (!$addressText && is_string($this->address) && trim($this->address) !== '') {
+            $addressText = trim($this->address);
+        }
+
+        // ---------- PRODUK ----------
         $productsReadable = $this->mapProductsReadable($this->products);
 
-        // 🔧 Ambil URL gambar pertama secara aman
+        // ---------- FOTO BARANG ----------
         $imageUrl = null;
         if (is_array($this->image) && isset($this->image[0]) && is_string($this->image[0])) {
             $imageUrl = Storage::url($this->image[0]);
@@ -46,12 +54,14 @@ class GaransiTransformer extends JsonResource
             'department'        => $this->department?->name ?? '-',
             'employee'          => $this->employee?->name ?? '-',
             'customer'          => $this->customer?->name ?? '-',
-            // 👇 kalau di Flutter kamu baca "category", lebih aman kirim key "category"
             'category'          => $this->customerCategory?->name ?? '-',
             'customer_category' => $this->customerCategory?->name ?? '-',
 
             'phone'             => $this->phone,
-            'address_text'      => $this->addressText($alamatReadable),
+
+            // inilah yang dipakai Flutter
+            'address'           => $this->address, 
+            'address_text'      => $addressText,
             'address_detail'    => $alamatReadable,
 
             'purchase_date'     => optional($this->purchase_date)->format('d/m/Y'),
@@ -60,12 +70,10 @@ class GaransiTransformer extends JsonResource
             'reason'            => $this->reason,
             'note'              => $this->note ?: null,
 
-            // 🔧 sebelumnya: 'image' => Storage::url($this->image)
             'image'             => $imageUrl,
-            'delivery_image_url'   => $this->delivery_image_url,    // URL bukti pertama (absolute)
-            'delivery_images_urls' => $this->delivery_images_urls,  // semua URL bukti (absolute array)
+            'delivery_image_url'   => $this->delivery_image_url,
+            'delivery_images_urls' => $this->delivery_images_urls,
 
-            // Jika tabel di Flutter butuh string “products_details”, sediakan versi join-an juga
             'products'          => $productsReadable,
             'products_details'  => collect($productsReadable)->map(function ($p) {
                 $brand = $p['brand'] ?? '-';
@@ -79,9 +87,8 @@ class GaransiTransformer extends JsonResource
             'status_pengajuan_raw' => $this->status_pengajuan,
             'status_product_raw'   => $this->status_product,
             'status_garansi_raw'   => $this->status_garansi,
-            'status'            => $statusLabel,
+            'status'               => $statusLabel,
 
-            // 👇 Samakan dengan yang dibaca Flutter (g.pdfUrl)
             'pdf_url'           => $this->garansi_file ? Storage::url($this->garansi_file) : null,
 
             'created_at'        => optional($this->created_at)->format('d/m/Y'),
@@ -89,13 +96,21 @@ class GaransiTransformer extends JsonResource
         ];
     }
 
-    /* ---------- Helpers ---------- */
+    /* ================== HELPERS (semua DI DALAM CLASS) ================== */
 
-    private function addressText(array $items): ?string
+    /** Build string alamat untuk ditampilkan di Flutter */
+    protected function buildAddressText(array $items): ?string
     {
         if (empty($items)) return null;
+
         return collect($items)->map(function ($a) {
-            $name = fn($objOrStr) => is_array($objOrStr) ? ($objOrStr['name'] ?? null) : (is_string($objOrStr) ? $objOrStr : null);
+            $name = function ($objOrStr) {
+                if (is_array($objOrStr)) {
+                    return $objOrStr['name'] ?? null;
+                }
+                return is_string($objOrStr) ? $objOrStr : null;
+            };
+
             $parts = [
                 $a['detail_alamat'] ?? null,
                 $name($a['kelurahan'] ?? null),
@@ -104,37 +119,45 @@ class GaransiTransformer extends JsonResource
                 $name($a['provinsi'] ?? null),
                 $a['kode_pos'] ?? null,
             ];
-            // buang null, '', '-', 'null'
-            $parts = array_values(array_filter($parts, fn($v) => ($t = trim((string)$v)) !== '' && $t !== '-' && strtolower($t) !== 'null'));
+
+            $parts = array_values(array_filter($parts, function ($v) {
+                $t = trim((string) $v);
+                return $t !== '' && $t !== '-' && strtolower($t) !== 'null';
+            }));
+
             return implode(', ', $parts);
-        })->join(' | ');
+        })->filter()->join(' | ');
     }
 
-    private function mapAddressesReadable($address): array
+    /** Normalisasi address jadi array rapi (detail_alamat, provinsi, kota, dll) */
+    protected function mapAddressesReadable($address): array
     {
         $items = is_array($address) ? $address : json_decode($address ?? '[]', true);
-        if (!is_array($items)) $items = [];
+        if (!is_array($items)) {
+            $items = [];
+        }
 
-        $getCode = function(array $a, string $key) {
-            // dukung: key_code, nested[key][code], legacy key (bisa code atau name)
-            if (!empty($a["{$key}_code"])) return (string)$a["{$key}_code"];
-            if (!empty($a[$key]['code']))  return (string)$a[$key]['code'];
+        // kalau associative array (satu object), bungkus jadi [ {...} ]
+        if ($items && array_keys($items) !== range(0, count($items) - 1)) {
+            $items = [$items];
+        }
+
+        $getCode = function (array $a, string $key) {
+            if (!empty($a["{$key}_code"])) return (string) $a["{$key}_code"];
+            if (!empty($a[$key]['code']))  return (string) $a[$key]['code'];
             if (!empty($a[$key]) && is_string($a[$key])) {
-                // heuristik: kalau string 2–10 char alfanumerik semua → anggap code
-                $v = (string)$a[$key];
+                $v = (string) $a[$key];
                 return preg_match('/^[A-Za-z0-9._-]{2,10}$/', $v) ? $v : null;
             }
             return null;
         };
 
-        $getName = function(array $a, string $key, ?string $code, string $model) {
-            // urutan prioritas: flat *_name → nested[name] → lookup by code → legacy string
-            if (!empty($a["{$key}_name"])) return (string)$a["{$key}_name"];
-            if (!empty($a[$key]['name']))  return (string)$a[$key]['name'];
+        $getName = function (array $a, string $key, ?string $code, string $model) {
+            if (!empty($a["{$key}_name"])) return (string) $a["{$key}_name"];
+            if (!empty($a[$key]['name']))  return (string) $a[$key]['name'];
             if ($code) return $this->nameFromCode($model, $code);
             if (!empty($a[$key]) && is_string($a[$key])) {
-                // kalau legacy string bukan code (heuristik gagal), pakai sebagai name
-                $v = (string)$a[$key];
+                $v = (string) $a[$key];
                 if (!preg_match('/^[A-Za-z0-9._-]{2,10}$/', $v)) return $v;
             }
             return null;
@@ -148,28 +171,41 @@ class GaransiTransformer extends JsonResource
 
             return [
                 'detail_alamat' => $a['detail_alamat'] ?? null,
-                'provinsi'      => ['code' => $provCode, 'name' => $getName($a, 'provinsi',  $provCode,  \Laravolt\Indonesia\Models\Provinsi::class)],
-                'kota_kab'      => ['code' => $kabCode,  'name' => $getName($a, 'kota_kab',  $kabCode,   \Laravolt\Indonesia\Models\Kabupaten::class)],
-                'kecamatan'     => ['code' => $kecCode,  'name' => $getName($a, 'kecamatan', $kecCode,   \Laravolt\Indonesia\Models\Kecamatan::class)],
-                'kelurahan'     => ['code' => $kelCode,  'name' => $getName($a, 'kelurahan', $kelCode,   \Laravolt\Indonesia\Models\Kelurahan::class)],
+                'provinsi'      => [
+                    'code' => $provCode,
+                    'name' => $getName($a, 'provinsi',  $provCode,  Provinsi::class),
+                ],
+                'kota_kab'      => [
+                    'code' => $kabCode,
+                    'name' => $getName($a, 'kota_kab',  $kabCode,   Kabupaten::class),
+                ],
+                'kecamatan'     => [
+                    'code' => $kecCode,
+                    'name' => $getName($a, 'kecamatan', $kecCode,   Kecamatan::class),
+                ],
+                'kelurahan'     => [
+                    'code' => $kelCode,
+                    'name' => $getName($a, 'kelurahan', $kelCode,   Kelurahan::class),
+                ],
                 'kode_pos'      => $a['kode_pos'] ?? $this->postalByVillage($kelCode),
             ];
         }, $items);
     }
 
-    private function nameFromCode(string $model, ?string $code): ?string
+    protected function nameFromCode(string $model, ?string $code): ?string
     {
         if (!$code) return null;
         return optional($model::where('code', $code)->first())->name;
     }
 
-    private function postalByVillage(?string $villageCode): ?string
+    protected function postalByVillage(?string $villageCode): ?string
     {
         if (!$villageCode) return null;
         return optional(PostalCode::where('village_code', $villageCode)->first())->postal_code;
     }
 
-    private function mapProductsReadable($products): array
+    /** Mapping produk untuk dikirim ke Flutter */
+    protected function mapProductsReadable($products): array
     {
         $items = is_array($products) ? $products : json_decode($products ?? '[]', true);
         if (!is_array($items)) $items = [];
@@ -184,7 +220,7 @@ class GaransiTransformer extends JsonResource
                 'category' => $product?->category?->name ?? null,
                 'product'  => $product?->name ?? null,
                 'color'    => $p['warna_id'] ?? null,
-                'quantity' => (int)($p['quantity'] ?? 0),
+                'quantity' => (int) ($p['quantity'] ?? 0),
             ];
         }, $items);
     }

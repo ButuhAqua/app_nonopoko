@@ -68,10 +68,10 @@ class Garansi extends Model
 
     # >>>>>>>>>> TAMBAHKAN INI <<<<<<<<<<
     protected $appends = [
+        'address_text', 
         'image_url',               // foto barang (1st)
         'delivery_image_url',      // bukti pengiriman (1st)
         'delivery_images_urls',    // semua bukti pengiriman (array url)
-        'address_text', 
     ];
 
     protected static function booted()
@@ -241,40 +241,60 @@ class Garansi extends Model
             "{$i['brand_name']} – {$i['category_name']} – {$i['product_name']} – {$i['color']} – Qty: {$i['quantity']}"
         )->implode('<br>');
     }
-
-    public function getAddressTextAttribute(): string
+    
+    public function getAddressTextAttribute(): ?string
     {
-        $addr = $this->address;
+        // ambil nilai mentah dari DB (belum di-cast)
+        $raw = $this->getAttributes()['address'] ?? null;
+        $value = $this->address; // sudah di-cast (kalau bisa)
 
-        // a) array-of-object
-        if (is_array($addr) && count($addr) > 0) {
-            $e = $addr[0];
+        // 1) Kalau raw string dan bukan JSON => langsung balikin sebagai teks lama
+        if (is_string($raw)) {
+            $trim = trim($raw);
 
-            // support struktur flat atau nested {kelurahan: {name: …}}
-            $val = function ($k) use ($e) {
-                if (!isset($e[$k])) return '';
-                $v = $e[$k];
-                if (is_array($v))   return (string)($v['name'] ?? '');
-                return (string)$v;
-            };
-
-            $parts = array_filter([
-                (string)($e['detail_alamat'] ?? ''),
-                $val('kelurahan'),
-                $val('kecamatan'),
-                $val('kota_kab'),
-                $val('provinsi'),
-                (string)($e['kode_pos'] ?? ''),
-            ], fn($x) => trim($x) !== '' && strtolower($x) !== 'null' && $x !== '-');
-
-            return empty($parts) ? '-' : implode(', ', $parts);
+            // coba decode JSON
+            $decoded = json_decode($trim, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $value = $decoded;
+            } else {
+                // bukan JSON, berarti address versi lama (string polos)
+                return $trim !== '' ? $trim : null;
+            }
         }
 
-        // b) kalau kebetulan disimpan sebagai string
-        if (is_string($addr) && trim($addr) !== '') {
-            return $addr;
+        // 2) Di titik ini kita berharap $value = array dari JSON (frontend)
+        if (!is_array($value) || empty($value)) {
+            return null;
         }
 
-        return '-';
+        // dukung 2 bentuk:
+        //  - [ { ... } ]
+        //  - { ... }
+        $first = $value[0] ?? $value;
+        if (!is_array($first)) {
+            return null;
+        }
+
+        // kalau dari Flutter: detail_alamat berisi string full alamat => pakai itu saja
+        if (!empty($first['detail_alamat'])) {
+            return $first['detail_alamat'];
+        }
+
+        // kalau suatu saat kamu kirim struktur lengkap, ini tetap jalan
+        $kel  = $first['kelurahan']['name'] ?? $first['kelurahan_name'] ?? $first['kelurahan'] ?? null;
+        $kec  = $first['kecamatan']['name'] ?? $first['kecamatan_name'] ?? $first['kecamatan'] ?? null;
+        $kab  = $first['kota_kab']['name'] ?? $first['kota_kab_name'] ?? $first['kota_kab'] ?? null;
+        $prov = $first['provinsi']['name'] ?? $first['provinsi_name'] ?? $first['provinsi'] ?? null;
+        $kode = $first['kode_pos'] ?? null;
+
+        $parts = array_filter([
+            $kel,
+            $kec,
+            $kab,
+            $prov,
+            $kode,
+        ], fn ($v) => filled($v) && $v !== '-');
+
+        return empty($parts) ? null : implode(', ', $parts);
     }
 }
