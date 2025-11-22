@@ -145,34 +145,47 @@ class Garansi extends Model
     }
 
     // ================= NORMALISASI PRODUK =================
-    protected static function normalizeProductColors(Garansi $garansi): void
+    protected static function normalizeProductColorsArray(?array $items): array
     {
-        $items = $garansi->products;
-
-        if (is_string($items)) {
-            $items = json_decode($items, true) ?: [];
-        }
-        if (!is_array($items)) {
-            $items = [];
+        if (! is_array($items)) {
+            return [];
         }
 
         foreach ($items as &$it) {
             $pid = $it['produk_id'] ?? null;
-            if (!$pid) continue;
+            if (! $pid) {
+                continue;
+            }
 
             $product = Product::find($pid);
-            if (!$product) continue;
+            if (! $product) {
+                continue;
+            }
 
-            if (array_key_exists('warna_id', $it) && is_numeric($it['warna_id'])) {
+            // kalau warna_id masih index (0,1,2) → ubah ke teks warna ("3000K")
+            if (isset($it['warna_id']) && is_numeric($it['warna_id'])) {
                 $idx    = (int) $it['warna_id'];
                 $colors = $product->colors ?? [];
+
                 if (isset($colors[$idx])) {
                     $it['warna_id'] = $colors[$idx];
                 }
             }
         }
 
-        $garansi->products = $items;
+        return $items;
+    }
+
+    protected static function normalizeProductColors(Garansi $garansi): void
+    {
+        $items = $garansi->products;
+
+        // kalau masih string JSON, decode dulu
+        if (is_string($items)) {
+            $items = json_decode($items, true) ?: [];
+        }
+
+        $garansi->products = self::normalizeProductColorsArray($items);
     }
 
     // ================= IMAGE HELPERS =================
@@ -218,19 +231,50 @@ class Garansi extends Model
     public function productsWithDetails(): array
     {
         $raw = $this->products;
-        if (is_string($raw)) $raw = json_decode($raw, true) ?: [];
-        elseif (!is_array($raw)) $raw = [];
+        if (is_string($raw)) {
+            $raw = json_decode($raw, true) ?: [];
+        } elseif (!is_array($raw)) {
+            $raw = [];
+        }
 
         return array_map(function ($item) {
             $product = Product::find($item['produk_id'] ?? null);
+
+            // --- FIX WARNA INDEX ---
+            $warna = $item['warna_id'] ?? '-';
+
+            // jika masih index (0,1,2) → ambil dari product->colors
+            if ($product && is_numeric($warna)) {
+                $idx    = (int) $warna;
+                $colors = $product->colors ?? [];
+
+                if (isset($colors[$idx])) {
+                    $warna = $colors[$idx]; // "3000K"
+                }
+            }
+
             return [
                 'brand_name'    => $product?->brand?->name ?? '(Brand hilang)',
                 'category_name' => $product?->category?->name ?? '(Kategori hilang)',
                 'product_name'  => $product?->name ?? '(Produk hilang)',
-                'color'         => $item['warna_id'] ?? '-',
+                'color'         => $warna,
                 'quantity'      => $item['quantity'] ?? 0,
             ];
         }, $raw);
+    }
+    public function getProductsAttribute($value)
+    {
+        // $value masih mentah dari DB (bisa string JSON / array)
+        if (is_string($value)) {
+            $items = json_decode($value, true) ?: [];
+        } elseif (is_array($value)) {
+            $items = $value;
+        } else {
+            $items = [];
+        }
+
+        // pastikan warna sudah di-convert dari index → teks
+        return self::normalizeProductColorsArray($items);
     }
 
     public function getProductsDetailsAttribute(): string

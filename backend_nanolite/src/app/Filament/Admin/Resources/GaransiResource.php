@@ -166,6 +166,10 @@ class GaransiResource extends Resource
                     ->label('Alamat')
                     ->rows(3)
                     ->required()
+                    ->formatStateUsing(function ($state, ?Garansi $record) {
+                        // tampilkan address_text yang sudah diformat rapi
+                        return $record?->address_text ?? (is_string($state) ? $state : '');
+                    })
                     ->dehydrateStateUsing(fn ($state) => $state) // simpan apa adanya sebagai string
                     ->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital'])),
                 
@@ -178,20 +182,98 @@ class GaransiResource extends Resource
 
                 // === produk ===
                 Repeater::make('products')
-                    ->label('Detail Produk')
-                    ->schema([
-                        Select::make('brand_id')->label('Brand')->options(fn () => Brand::pluck('name', 'id'))->required()->searchable(),
-                        Select::make('kategori_id')->label('Kategori')->options(fn () => Category::pluck('name', 'id'))->required()->searchable(),
-                        Select::make('produk_id')->label('Produk')->options(fn () => Product::pluck('name', 'id'))->required()->searchable(),
-                        Select::make('warna_id')->label('Warna')->options(fn ($get) => ($get('produk_id') ? collect(Product::find($get('produk_id'))?->colors ?? [])->mapWithKeys(fn($c)=>[$c=>$c]) : []))->required()->searchable(),
-                        TextInput::make('quantity')->label('Jumlah')->numeric()->required(),
-                    ])
-                    ->columns(3)
-                    ->minItems(1)
-                    ->defaultItems(1)
-                    ->createItemButtonLabel('Tambah Produk')
-                    ->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital']))
-                    ->required(),
+                ->label('Detail Produk')
+                ->schema([
+                    // BRAND
+                    Select::make('brand_id')
+                        ->label('Brand')
+                        ->options(fn () => Brand::pluck('name', 'id'))
+                        ->reactive()
+                        ->afterStateUpdated(function ($state, callable $set) {
+                            // reset field yg bergantung ke brand
+                            $set('kategori_id', null);
+                            $set('produk_id', null);
+                            $set('warna_id', null);
+                        })
+                        ->required()
+                        ->searchable(),
+
+                    // KATEGORI (filter berdasarkan brand)
+                    Select::make('kategori_id')
+                        ->label('Kategori')
+                        ->options(function (callable $get) {
+                            $brandId = $get('brand_id');
+                            if (! $brandId) {
+                                return [];
+                            }
+
+                            // ambil kategori yg dipakai oleh product dengan brand tsb
+                            return Category::whereHas('products', function ($q) use ($brandId) {
+                                    $q->where('brand_id', $brandId);
+                                })
+                                ->pluck('name', 'id');
+                        })
+                        ->reactive()
+                        ->afterStateUpdated(function ($state, callable $set) {
+                            // reset field yg bergantung ke kategori
+                            $set('produk_id', null);
+                            $set('warna_id', null);
+                        })
+                        ->required()
+                        ->searchable(),
+
+                    // PRODUK (filter by brand + kategori)
+                    Select::make('produk_id')
+                        ->label('Produk')
+                        ->options(function (callable $get) {
+                            $brandId    = $get('brand_id');
+                            $categoryId = $get('kategori_id');
+
+                            $query = Product::query();
+
+                            if ($brandId) {
+                                $query->where('brand_id', $brandId);
+                            }
+                            if ($categoryId) {
+                                $query->where('category_id', $categoryId);
+                            }
+
+                            return $query->pluck('name', 'id');
+                        })
+                        ->reactive()
+                        ->afterStateUpdated(fn ($state, callable $set) => $set('warna_id', null))
+                        ->required()
+                        ->searchable(),
+
+                    // WARNA (sudah pakai colors di product)
+                    Select::make('warna_id')
+                        ->label('Warna')
+                        ->options(function (callable $get) {
+                            $productId = $get('produk_id');
+                            if (! $productId) {
+                                return [];
+                            }
+
+                            $product = Product::find($productId);
+                            $colors  = $product?->colors ?? [];
+
+                            // key & value = teks warna (mis: "3000K")
+                            return collect($colors)->mapWithKeys(fn ($c) => [$c => $c]);
+                        })
+                        ->required()
+                        ->searchable(),
+
+                    TextInput::make('quantity')
+                        ->label('Jumlah')
+                        ->numeric()
+                        ->required(),
+                ])
+                ->columns(3)
+                ->minItems(1)
+                ->defaultItems(1)
+                ->createItemButtonLabel('Tambah Produk')
+                ->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital']))
+                ->required(),
 
                 // === upload foto ===
                 FileUpload::make('image')

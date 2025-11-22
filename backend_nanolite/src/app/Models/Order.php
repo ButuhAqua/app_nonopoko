@@ -100,7 +100,30 @@ class Order extends Model
         'payment_due_until'      => 'date',
     ];
 
-    protected $appends = ['invoice_pdf_url', 'invoice_excel_url'];
+    protected $appends = ['invoice_pdf_url', 'invoice_excel_url', 'delivery_image_url', 'delivery_images_urls',];
+
+    protected function makeUrl(?string $path): ?string
+    {
+        if (!$path) return null;
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+        return Storage::disk('public')->url($path);
+    }
+
+    public function getDeliveryImageUrlAttribute(): ?string
+    {
+        $imgs = $this->delivery_images;
+        if (is_array($imgs) && !empty($imgs)) return $this->makeUrl($imgs[0]);
+        return null;
+    }
+
+    public function getDeliveryImagesUrlsAttribute(): array
+    {
+        $imgs = $this->delivery_images;
+        if (!is_array($imgs) || empty($imgs)) return [];
+        return array_values(array_filter(array_map(fn($p) => $this->makeUrl($p), $imgs)));
+    }
 
     protected static function booted()
     {
