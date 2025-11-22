@@ -162,12 +162,13 @@ class GaransiResource extends Resource
 
                 TextInput::make('phone')->label('Phone')->reactive()->required() ->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital'])),    
 
-                TextColumn::make('address_text')
+                Textarea::make('address')
                     ->label('Alamat')
-                    ->getStateUsing(fn (\App\Models\Garansi $record) => $record->address_text ?? '-')
-                    ->default('-')
-                    ->wrap()
-                    ->sortable(),
+                    ->rows(3)
+                    ->required()
+                    ->dehydrateStateUsing(fn ($state) => $state) // simpan apa adanya sebagai string
+                    ->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital'])),
+                
 
                 DatePicker::make('purchase_date')->label('Tanggal Pembelian')->required()->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital'])),    
                 DatePicker::make('claim_date')->label('Tanggal Klaim Garansi')->required()->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital'])),    
@@ -355,33 +356,14 @@ class GaransiResource extends Resource
                 TextColumn::make('customer.name')->label('Customer')->sortable()->searchable(),
                 TextColumn::make('customerCategory.name')->label('Kategori Customer')->sortable()->searchable(),
                 TextColumn::make('phone')->label('Phone')->sortable(),
-                TextColumn::make('address')
+                TextColumn::make('address_text')
                     ->label('Alamat')
-                    ->wrap()
-                    ->formatStateUsing(function ($state) {
-                        if (is_string($state)) {
-                            $decoded = json_decode($state, true);
-                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                $state = $decoded;
-                            }
-                        }
-
-                        if (is_array($state)) {
-                            $i = $state[0] ?? [];
-                            $kel = $i['kelurahan']['name'] ?? $i['kelurahan_name'] ?? $i['kelurahan'] ?? null;
-                            $kec = $i['kecamatan']['name'] ?? $i['kecamatan_name'] ?? $i['kecamatan'] ?? null;
-                            $kab = $i['kota_kab']['name'] ?? $i['kota_kab_name'] ?? $i['kota_kab'] ?? null;
-                            $prov = $i['provinsi']['name'] ?? $i['provinsi_name'] ?? $i['provinsi'] ?? null;
-
-                            return implode(', ', array_filter([
-                                $i['detail_alamat'] ?? null,
-                                $kel, $kec, $kab, $prov,
-                                $i['kode_pos'] ?? null,
-                            ], fn ($v) => filled($v) && $v !== '-'));
-                        }
-
-                        return (string) $state;
-                    }),
+                    ->default('-')
+                    ->extraAttributes([
+                        'class' => 'whitespace-nowrap max-w-xs truncate', // 1 baris, kalau kepanjangan di-ellipsis
+                    ])
+                    ->tooltip(fn (Garansi $record) => $record->address_text) // hover: lihat alamat full
+                    ->sortable(),
 
                 TextColumn::make('products_details')->label('Detail Produk')->html()->sortable(),
                 TextColumn::make('purchase_date')->label('Tanggal Pembelian')->date()->sortable(),

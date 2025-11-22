@@ -244,57 +244,65 @@ class Garansi extends Model
     
     public function getAddressTextAttribute(): ?string
     {
-        // ambil nilai mentah dari DB (belum di-cast)
-        $raw = $this->getAttributes()['address'] ?? null;
-        $value = $this->address; // sudah di-cast (kalau bisa)
+        // 1. Ambil mentah dari DB
+        $raw   = $this->getAttributes()['address'] ?? null;
+        $value = $this->address; // hasil cast
 
-        // 1) Kalau raw string dan bukan JSON => langsung balikin sebagai teks lama
+        // 2. Kalau raw string, coba decode JSON
         if (is_string($raw)) {
-            $trim = trim($raw);
-
-            // coba decode JSON
+            $trim    = trim($raw);
             $decoded = json_decode($trim, true);
+
             if (json_last_error() === JSON_ERROR_NONE) {
-                $value = $decoded;
+                // Jika hasil decode ARRAY => berarti format dari Flutter
+                if (is_array($decoded)) {
+                    $value = $decoded;
+                }
+                // Jika hasil decode STRING => alamat polos dari backend
+                elseif (is_string($decoded)) {
+                    $trimDecoded = trim($decoded);
+                    return $trimDecoded !== '' ? $trimDecoded : null;
+                }
             } else {
-                // bukan JSON, berarti address versi lama (string polos)
+                // bukan JSON sama sekali (alamat lama berupa string polos)
                 return $trim !== '' ? $trim : null;
             }
         }
 
-        // 2) Di titik ini kita berharap $value = array dari JSON (frontend)
+        // 3. Kalau sampai sini dan value STRING (hasil cast), anggap alamat polos
+        if (is_string($value)) {
+            $trim = trim($value);
+            return $trim !== '' ? $trim : null;
+        }
+
+        // 4. Di titik ini kita berharap $value = array dari Flutter
         if (!is_array($value) || empty($value)) {
             return null;
         }
 
-        // dukung 2 bentuk:
-        //  - [ { ... } ]
-        //  - { ... }
+        // dukung 2 bentuk: [ { ... } ] atau { ... }
         $first = $value[0] ?? $value;
         if (!is_array($first)) {
             return null;
         }
 
-        // kalau dari Flutter: detail_alamat berisi string full alamat => pakai itu saja
+        // Jika dari Flutter: detail_alamat berisi full address
         if (!empty($first['detail_alamat'])) {
             return $first['detail_alamat'];
         }
 
-        // kalau suatu saat kamu kirim struktur lengkap, ini tetap jalan
-        $kel  = $first['kelurahan']['name'] ?? $first['kelurahan_name'] ?? $first['kelurahan'] ?? null;
-        $kec  = $first['kecamatan']['name'] ?? $first['kecamatan_name'] ?? $first['kecamatan'] ?? null;
-        $kab  = $first['kota_kab']['name'] ?? $first['kota_kab_name'] ?? $first['kota_kab'] ?? null;
-        $prov = $first['provinsi']['name'] ?? $first['provinsi_name'] ?? $first['provinsi'] ?? null;
-        $kode = $first['kode_pos'] ?? null;
+        $kel  = $first['kelurahan']['name']  ?? $first['kelurahan_name']  ?? $first['kelurahan']  ?? null;
+        $kec  = $first['kecamatan']['name']  ?? $first['kecamatan_name']  ?? $first['kecamatan']  ?? null;
+        $kab  = $first['kota_kab']['name']   ?? $first['kota_kab_name']   ?? $first['kota_kab']   ?? null;
+        $prov = $first['provinsi']['name']   ?? $first['provinsi_name']   ?? $first['provinsi']   ?? null;
+        $kode = $first['kode_pos']           ?? null;
 
-        $parts = array_filter([
-            $kel,
-            $kec,
-            $kab,
-            $prov,
-            $kode,
-        ], fn ($v) => filled($v) && $v !== '-');
+        $parts = array_filter(
+            [$kel, $kec, $kab, $prov, $kode],
+            fn ($v) => filled($v) && $v !== '-'
+        );
 
         return empty($parts) ? null : implode(', ', $parts);
-    }
+}
+
 }
