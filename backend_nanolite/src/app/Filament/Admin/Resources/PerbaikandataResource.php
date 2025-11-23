@@ -166,50 +166,81 @@ class PerbaikandataResource extends Resource
                 Repeater::make('address')
                     ->label('Alamat')
                     ->schema([
-                        Select::make('provinsi')->label('Provinsi')
+                        Select::make('provinsi')
+                            ->label('Provinsi')
                             ->options(fn () => Provinsi::pluck('name', 'code')->toArray())
-                            ->searchable()->reactive()
+                            ->searchable()
+                            ->reactive()
+                            ->afterStateHydrated(function ($state, callable $set) {
+                                // Kalau data lama bentuknya array, ambil kode-nya
+                                if (is_array($state)) {
+                                    $set('provinsi', $state['code'] ?? ($state['id'] ?? null));
+                                }
+                            })
                             ->afterStateUpdated(fn (callable $set) => $set('kota_kab', null)),
-
-                        Select::make('kota_kab')->label('Kota/Kabupaten')
+                
+                        Select::make('kota_kab')
+                            ->label('Kota/Kabupaten')
                             ->options(function (callable $get) {
                                 if ($prov = $get('provinsi')) {
                                     return Kabupaten::where('province_code', $prov)->pluck('name', 'code')->toArray();
                                 }
                                 return [];
                             })
-                            ->searchable()->reactive()
+                            ->searchable()
+                            ->reactive()
+                            ->afterStateHydrated(function ($state, callable $set) {
+                                if (is_array($state)) {
+                                    $set('kota_kab', $state['code'] ?? ($state['id'] ?? null));
+                                }
+                            })
                             ->afterStateUpdated(fn (callable $set) => $set('kecamatan', null)),
-
-                        Select::make('kecamatan')->label('Kecamatan')
+                
+                        Select::make('kecamatan')
+                            ->label('Kecamatan')
                             ->options(function (callable $get) {
                                 if ($kab = $get('kota_kab')) {
                                     return Kecamatan::where('city_code', $kab)->pluck('name', 'code')->toArray();
                                 }
                                 return [];
                             })
-                            ->searchable()->reactive()
+                            ->searchable()
+                            ->reactive()
+                            ->afterStateHydrated(function ($state, callable $set) {
+                                if (is_array($state)) {
+                                    $set('kecamatan', $state['code'] ?? ($state['id'] ?? null));
+                                }
+                            })
                             ->afterStateUpdated(fn (callable $set) => $set('kelurahan', null)),
-
-                        Select::make('kelurahan')->label('Kelurahan')
+                
+                        Select::make('kelurahan')
+                            ->label('Kelurahan')
                             ->options(function (callable $get) {
                                 if ($kec = $get('kecamatan')) {
                                     return Kelurahan::where('district_code', $kec)->pluck('name', 'code')->toArray();
                                 }
                                 return [];
                             })
-                            ->searchable()->reactive()
+                            ->searchable()
+                            ->reactive()
+                            ->afterStateHydrated(function ($state, callable $set) {
+                                if (is_array($state)) {
+                                    $set('kelurahan', $state['code'] ?? ($state['id'] ?? null));
+                                }
+                            })
                             ->afterStateUpdated(function (callable $set, $state) {
                                 $postal = \App\Models\PostalCode::where('village_code', $state)->first();
                                 $set('kode_pos', $postal?->postal_code ?? null);
                             }),
-
+                
                         TextInput::make('kode_pos')->label('Kode Pos')->readOnly(),
                         Textarea::make('detail_alamat')->label('Detail Alamat')->rows(3)->nullable(),
                     ])
-                    ->columns(3)->defaultItems(1)
-                    ->disableItemCreation()->disableItemDeletion()->dehydrated(),
-                
+                    ->columns(3)
+                    ->defaultItems(1)
+                    ->disableItemCreation()
+                    ->disableItemDeletion()
+                    ->dehydrated(),                
 
             FileUpload::make('image')
                 ->label('Gambar')
