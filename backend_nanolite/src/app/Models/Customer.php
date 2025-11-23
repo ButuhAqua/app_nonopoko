@@ -45,6 +45,39 @@ class Customer extends Model
         'image'                  => 'array',   // multi image
     ];
 
+    public function getAddressAttribute($value)
+    {
+        // $value bisa string JSON, array, atau null
+        if (is_string($value)) {
+            $data = json_decode($value, true) ?: [];
+        } else {
+            $data = $value ?? [];
+        }
+
+        if (! is_array($data)) {
+            return [];
+        }
+
+        foreach ($data as &$row) {
+            if (! is_array($row)) {
+                $row = [];
+                continue;
+            }
+
+            foreach (['provinsi', 'kota_kab', 'kecamatan', 'kelurahan'] as $field) {
+                if (isset($row[$field]) && is_array($row[$field])) {
+                    // ambil kode kalau ada
+                    $row[$field] =
+                        $row[$field]['code']
+                        ?? $row[$field]['id']
+                        ?? (is_string(reset($row[$field])) ? reset($row[$field]) : null);
+                }
+            }
+        }
+
+        return $data;
+    }
+
     /** Normalisasi email (tanpa bikin unik) */
     public function setEmailAttribute($value): void
     {
