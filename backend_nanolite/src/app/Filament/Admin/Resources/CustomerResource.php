@@ -134,8 +134,11 @@ class CustomerResource extends Resource
 
             Select::make('customer_program_id')
                 ->label('Program Customer')
-                ->options(fn () => CustomerProgram::where('status', 'active')->pluck('name', 'id'))
-                ->preload()->searchable()->nullable(),
+                ->options(fn () => CustomerProgram::pluck('name', 'id')) // <– hilangkan where('status', 'active')
+                ->preload()
+                ->searchable()
+                ->nullable(),
+            
 
             TextInput::make('gmaps_link')->label('Link Google Maps')->url()->nullable(),
 
