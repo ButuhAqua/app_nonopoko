@@ -69,6 +69,11 @@ class ProductReturn extends Model
         'on_hold_until'          => 'datetime',
     ];
 
+    protected $appends = [
+        'address_text',
+        'image_url',
+    ];
+
     protected static function booted()
     {
         static::creating(function (ProductReturn $return) {
@@ -142,28 +147,66 @@ class ProductReturn extends Model
     protected static function consumeImageArray(ProductReturn $return, string $field, string $folder): void
     {
         $imgs = $return->$field ?? [];
+
+        // Kalau string:
+        // - kalau JSON array => decode
+        // - kalau bukan JSON => anggap single value (base64/path)
         if (is_string($imgs)) {
-            $imgs = json_decode($imgs, true) ?: [];
+            $decoded = json_decode($imgs, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $imgs = $decoded;
+            } else {
+                $imgs = [$imgs];
+            }
         }
-        if (!is_array($imgs)) return;
+
+        if (!is_array($imgs)) {
+            return;
+        }
 
         $saved = [];
+
         foreach ($imgs as $img) {
-            if (is_string($img) && preg_match('/^data:image\/([a-zA-Z0-9.+-]+);base64,/', $img, $m)) {
+            if (!is_string($img) || $img === '') {
+                continue;
+            }
+
+            // base64 image
+            if (preg_match('/^data:image\/([a-zA-Z0-9.+-]+);base64,/', $img, $m)) {
                 $ext  = strtolower($m[1] ?? 'png');
                 $data = substr($img, strpos($img, ',') + 1);
                 $bin  = base64_decode($data, true);
-                if ($bin === false) continue;
+                if ($bin === false) {
+                    continue;
+                }
 
                 $name = $folder . '/' . now()->format('Ymd_His') . '_' . Str::random(8) . '.' . $ext;
                 Storage::disk('public')->put($name, $bin);
                 $saved[] = $name;
-            } elseif (is_string($img)) {
+            } else {
+                // sudah path / URL
                 $saved[] = $img;
             }
         }
 
         $return->$field = $saved;
+    }
+
+    protected function makeUrl(?string $path): ?string
+    {
+        if (!$path) return null;
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+        return Storage::disk('public')->url($path);
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        $img = $this->image;
+        if (is_array($img) && !empty($img)) return $this->makeUrl($img[0]);
+        if (is_string($img) && $img !== '')  return $this->makeUrl($img);
+        return null;
     }
 
     // ================= RELASI =================
@@ -207,28 +250,62 @@ class ProductReturn extends Model
     }
 
     // ================= ALAMAT =================
-    public function getAddressTextAttribute(): string
+    public function getAddressTextAttribute(): ?string
     {
-        if (is_array($this->address) && count($this->address) > 0) {
-            $addr = $this->address[0];
+        // 1. Ambil mentah dari DB
+        $raw   = $this->getAttributes()['address'] ?? null;
+        $value = $this->address; // hasil cast (bisa array / string)
 
-            $parts = [
-                $addr['detail_alamat'] ?? '',
-                $addr['kelurahan'] ?? '',
-                $addr['kecamatan'] ?? '',
-                $addr['kota_kab'] ?? '',
-                $addr['provinsi'] ?? '',
-                $addr['kode_pos'] ?? '',
-            ];
+        // 2. Kalau raw string, coba decode JSON (alamat dari Flutter)
+        if (is_string($raw)) {
+            $trim    = trim($raw);
+            $decoded = json_decode($trim, true);
 
-            $cleaned = array_filter($parts, function ($v) {
-                $v = trim((string) $v);
-                return $v !== '' && $v !== '-';
-            });
-
-            return implode(', ', $cleaned);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                if (is_array($decoded)) {
+                    $value = $decoded;
+                } elseif (is_string($decoded)) {
+                    $trimDecoded = trim($decoded);
+                    return $trimDecoded !== '' ? $trimDecoded : null;
+                }
+            } else {
+                // bukan JSON: alamat polos
+                return $trim !== '' ? $trim : null;
+            }
         }
 
-        return '-';
+        // 3. Kalau masih string juga, anggap alamat polos
+        if (is_string($value)) {
+            $trim = trim($value);
+            return $trim !== '' ? $trim : null;
+        }
+
+        // 4. Di sini kita harap value = array [{...}] atau {...}
+        if (!is_array($value) || empty($value)) {
+            return null;
+        }
+
+        $first = $value[0] ?? $value;
+        if (!is_array($first)) {
+            return null;
+        }
+
+        // kalau Flutter kirim detail_alamat sudah lengkap
+        if (!empty($first['detail_alamat'])) {
+            return $first['detail_alamat'];
+        }
+
+        $kel  = $first['kelurahan']['name']  ?? $first['kelurahan']  ?? null;
+        $kec  = $first['kecamatan']['name']  ?? $first['kecamatan']  ?? null;
+        $kab  = $first['kota_kab']['name']   ?? $first['kota_kab']   ?? null;
+        $prov = $first['provinsi']['name']   ?? $first['provinsi']   ?? null;
+        $kode = $first['kode_pos']           ?? null;
+
+        $parts = array_filter(
+            [$kel, $kec, $kab, $prov, $kode],
+            fn ($v) => filled($v) && $v !== '-'
+        );
+
+        return empty($parts) ? null : implode(', ', $parts);
     }
 }

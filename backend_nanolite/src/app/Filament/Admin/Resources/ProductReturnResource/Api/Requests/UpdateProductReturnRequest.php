@@ -37,8 +37,17 @@ class UpdateProductReturnRequest extends FormRequest
             'department_id'          => ['sometimes','exists:departments,id'],
 
             'phone'                  => ['sometimes','string','max:20'],
-            // Di Resource address disimpan sebagai string (hasil format). Sesuaikan jika kamu simpan sebagai array.
-            'address'                => ['sometimes','string'],
+
+            // address boleh string / array
+            'address' => [
+                'sometimes',
+                function ($attribute, $value, $fail) {
+                    if (! is_string($value) && ! is_array($value)) {
+                        $fail("The {$attribute} field must be a string or an array.");
+                    }
+                },
+            ],
+
             'reason'                 => ['sometimes','nullable','string'],
             'note'                   => ['sometimes','nullable','string'],
             'amount'                 => ['sometimes','numeric','min:0'],
@@ -51,14 +60,21 @@ class UpdateProductReturnRequest extends FormRequest
             'products.*.warna_id'        => ['required_with:products','string'],
             'products.*.quantity'        => ['required_with:products','integer','min:1'],
 
-            // --- foto barang (array of path string) ---
-            'image'                      => ['sometimes','nullable','array'],
-            'image.*'                    => ['string'],
+            // --- foto barang ---
+            'image' => [
+                'sometimes','nullable',
+                function ($attribute, $value, $fail) {
+                    if (! is_null($value) && ! is_string($value) && ! is_array($value)) {
+                        $fail("The {$attribute} field must be a string or an array.");
+                    }
+                },
+            ],
+            // 'image.*' => ['string'],
 
             // --- status (samakan dengan Resource) ---
             'status_pengajuan'           => ['sometimes', Rule::in(['pending','approved','rejected'])],
             'status_product'             => ['sometimes', Rule::in(['pending','ready_stock','sold_out','rejected'])],
-            'status_return'             => ['sometimes', Rule::in(['pending','confirmed','processing','on_hold','delivered','completed','cancelled','rejected'])],
+            'status_return'              => ['sometimes', Rule::in(['pending','confirmed','processing','on_hold','delivered','completed','cancelled','rejected'])],
 
             // --- komentar & audit trail ---
             'rejection_comment'          => ['sometimes','nullable','string','min:5'],
@@ -75,8 +91,16 @@ class UpdateProductReturnRequest extends FormRequest
             'cancelled_by'               => ['sometimes','nullable','exists:employees,id'],
 
             // --- bukti delivery ---
-            'delivery_images'            => ['sometimes','nullable','array'],
-            'delivery_images.*'          => ['string'],
+            'delivery_images' => [
+                'sometimes','nullable',
+                function ($attribute, $value, $fail) {
+                    if (! is_null($value) && ! is_string($value) && ! is_array($value)) {
+                        $fail("The {$attribute} field must be a string or an array.");
+                    }
+                },
+            ],
+            // 'delivery_images.*' => ['string'],
+
             'delivered_at'               => ['sometimes','nullable','date'],
             'delivered_by'               => ['sometimes','nullable','exists:employees,id'],
 

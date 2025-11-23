@@ -157,28 +157,18 @@ class ProductReturnResource extends Resource
 
                 TextInput::make('phone')->label('Phone')->reactive()->required()
                                         ->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital'])),
+                                        
                 Textarea::make('address')
                     ->label('Alamat')
                     ->rows(3)
                     ->required()
-                    ->formatStateUsing(function ($state) {
-                        if (is_array($state)) {
-                            return collect($state)->map(function ($i) {
-                                return implode(', ', array_filter([
-                                    $i['detail_alamat'] ?? null,
-                                    $i['kelurahan'] ?? null,
-                                    $i['kecamatan'] ?? null,
-                                    $i['kota_kab'] ?? null,
-                                    $i['provinsi'] ?? null,
-                                    $i['kode_pos'] ?? null,
-                                ], fn ($v) => !empty($v) && $v !== '-'));
-                            })->implode("\n");
-                        }
-                        return $state;
+                    ->formatStateUsing(function ($state, ?ProductReturn $record) {
+                        // tampilkan versi yang sudah rapi
+                        return $record?->address_text ?? (is_string($state) ? $state : '');
                     })
-                    ->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital']))
-                    ->dehydrateStateUsing(fn ($state) => $state),
-
+                    ->dehydrateStateUsing(fn ($state) => $state) // simpan apa adanya (string)
+                    ->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital'])),
+                
                 TextInput::make('amount')->label('Nominal')->numeric()->prefix('Rp')->rules(['min:1'])->required()
                                           ->disabled(fn ($record) => $record && auth()->user()->hasAnyRole(['sales','head_sales','head_digital'])),
 
@@ -462,11 +452,14 @@ class ProductReturnResource extends Resource
 
                 TextColumn::make('phone')->label('Phone')->sortable(),
 
-                TextColumn::make('address')
+                TextColumn::make('address_text')
                     ->label('Alamat')
-                    ->limit(50)
+                    ->default('-')
+                    ->extraAttributes(['class' => 'whitespace-nowrap max-w-xs truncate'])
+                    ->tooltip(fn (ProductReturn $record) => $record->address_text)
                     ->sortable()
                     ->searchable(),
+                
 
                 TextColumn::make('products_details')->label('Detail Produk')->html()->sortable(),
 

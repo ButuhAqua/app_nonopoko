@@ -35,8 +35,17 @@ class CreateProductReturnRequest extends FormRequest
 
             // --- info kontak & alasan ---
             'phone'   => ['required','string','max:20'],
-            // Catatan: di UI address didehidrate sebagai string; jika API ingin kirim array, sesuaikan sendiri di controller/mutator.
-            'address' => ['required','string'],
+
+            // address boleh STRING (alamat biasa) ATAU ARRAY (alamat dari Flutter)
+            'address' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if (! is_string($value) && ! is_array($value)) {
+                        $fail("The {$attribute} field must be a string or an array.");
+                    }
+                },
+            ],
+
             'reason'  => ['required','string'],
             'note'    => ['nullable','string'],
 
@@ -48,14 +57,18 @@ class CreateProductReturnRequest extends FormRequest
             'products.*.warna_id'        => ['required','string'],        // label warna (bukan index)
             'products.*.quantity'        => ['required','integer','min:1'],
 
-            // --- foto barang (array path string), sejajarkan dengan GaransiRequest ---
-            'image'                      => ['nullable','array'],
-            'image.*'                    => ['string'],
+            // --- foto barang ---
+            // Boleh: string base64 / path, atau array of string
+            'image'                  => ['nullable'],
+            'image.*'                => ['string'],
+
+            // kalau memang kadang kirim array of string, kita nggak perlu 'image.*' lagi
+            // 'image.*' => ['string'],
 
             // --- status (selaras dengan Resource) ---
             'status_pengajuan'           => ['nullable', Rule::in(['pending','approved','rejected'])],
             'status_product'             => ['nullable', Rule::in(['pending','ready_stock','sold_out','rejected'])],
-            'status_return'             => ['nullable', Rule::in(['pending','confirmed','processing','on_hold','delivered','completed','cancelled','rejected'])],
+            'status_return'              => ['nullable', Rule::in(['pending','confirmed','processing','on_hold','delivered','completed','cancelled','rejected'])],
 
             // --- komentar & audit trail ---
             'rejection_comment'          => ['nullable','string','min:5'],
@@ -71,11 +84,10 @@ class CreateProductReturnRequest extends FormRequest
             'cancelled_comment'          => ['nullable','string','min:5'],
             'cancelled_by'               => ['nullable','exists:employees,id'],
 
-            // --- bukti delivery ---
-            'delivery_images'            => ['nullable','array'],
-            'delivery_images.*'          => ['string'],
-            'delivered_at'               => ['nullable','date'],
-            'delivered_by'               => ['nullable','exists:employees,id'],
+            'delivery_images'        => ['nullable','array'],
+            'delivery_images.*'      => ['string'],
+            'delivered_at'           => ['nullable','date'],
+            'delivered_by'           => ['nullable','exists:employees,id'],
 
             // --- file opsional (mengikuti field di Resource) ---
             'return_file'                => ['nullable','string'],
